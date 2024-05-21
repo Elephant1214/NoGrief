@@ -1,65 +1,107 @@
 package me.elephant1214.nogrief.claims
 
-import me.elephant1214.nogrief.NoGrief
-import me.elephant1214.nogrief.utils.getUuid
-import me.elephant1214.nogrief.utils.toWorld
+import kotlinx.serialization.Serializable
+import me.elephant1214.nogrief.claims.permissions.ClaimPermission
+import me.elephant1214.nogrief.players.PlayerManager
+import me.elephant1214.nogrief.utils.ClaimSerializer
+import org.bukkit.Bukkit
 import org.bukkit.Chunk
 import org.bukkit.World
-import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Player
 import java.time.Instant
 import java.util.*
 
+@Serializable(ClaimSerializer::class)
 class Claim(
-    val claimId: UUID = ClaimManager.makeNewClaimID(),
+    val claimId: UUID = ClaimManager.newClaimID(),
     ownerIn: UUID,
     val world: World,
-    private var chunkCount: Int,
-    private val permissions: MutableMap<UUID, ClaimPermissionLevel> = mutableMapOf(ownerIn to ClaimPermissionLevel.MANAGER),
-    private var modifiedAt: Instant = Instant.now()
+    private val _chunks: MutableSet<ClaimChunk> = mutableSetOf(),
+    private val _permissions: MutableMap<UUID, EnumSet<ClaimPermission>> = mutableMapOf(
+        ownerIn to EnumSet.allOf(ClaimPermission::class.java)
+    ),
+    modifiedIn: Instant = Instant.now()
 ) {
     var owner: UUID = ownerIn
         set(value) {
             field = value
-            setPermissionLevel(value, ClaimPermissionLevel.MANAGER)
+            setPermissions(Bukkit.getPlayer(owner)!!, EnumSet.allOf(ClaimPermission::class.java))
         }
+
+    var modified: Instant = modifiedIn
+        private set
 
     constructor(owner: UUID, world: World, chunk: ClaimChunk) : this(
         ownerIn = owner,
         world = world,
-        chunkCount = 1,
     ) {
-        ClaimManager.addChunk(chunk, this)
+        this._chunks.add(chunk)
     }
 
-    fun canModifyBlocks(player: Player): Boolean =
-        this.getPermissionLevel(player.uniqueId) != ClaimPermissionLevel.VISITOR
+    /**
+     * @return Whether [player] has [permission] in this claim.
+     */
+    private fun hasPermission(player: Player, permission: ClaimPermission): Boolean =
+        PlayerManager.isBypassing(player) || this._permissions[player.uniqueId]?.contains(permission) ?: false
 
-    fun canModifyContainers(player: Player): Boolean =
-        this.getPermissionLevel(player.uniqueId).ordinal >= ClaimPermissionLevel.CONTAINER_TRUSTED.ordinal
-
-    fun getPermissionLevel(player: UUID): ClaimPermissionLevel =
-        this.permissions[player] ?: ClaimPermissionLevel.VISITOR
-
-    fun setPermissionLevel(player: UUID, level: ClaimPermissionLevel) {
-        this.permissions[player] = level
-        this.markModified()
+    fun canBreak(player: Player): Boolean = hasPermission(player, ClaimPermission.BREAK)
+    
+    fun canPlace(player: Player): Boolean = hasPermission(player, ClaimPermission.PLACE)
+    
+    fun canAccessContainers(player: Player): Boolean = hasPermission(player, ClaimPermission.CONTAINERS)
+    
+    fun hasEntitiesPerm(player: Player): Boolean = hasPermission(player, ClaimPermission.ENTITIES)
+    
+    fun hasExplosionPerm(player: Player): Boolean = hasPermission(player, ClaimPermission.EXPLOSIONS)
+    
+    fun hasFirePerm(player: Player): Boolean = hasPermission(player, ClaimPermission.FIRE)
+    
+    fun canInteract(player: Player): Boolean = hasPermission(player, ClaimPermission.INTERACT)
+    
+    fun hasTilePerm(player: Player): Boolean = hasPermission(player, ClaimPermission.TILE_ENTITIES)
+    
+    fun canManageClaim(player: Player): Boolean = hasPermission(player, ClaimPermission.MANAGE)
+    
+    /**
+     * Sets a [ClaimPermission] for a player.
+     */
+    fun setPermission(player: Player, permission: ClaimPermission) {
+        val oldSize = this._permissions.size
+        this._permissions.getOrPut(player.uniqueId) { EnumSet.of(permission) }.apply {
+            add(permission)
+            if (size != oldSize) this@Claim.markModified()
+        }
     }
 
-    fun containsChunk(chunk: ClaimChunk): Boolean {
-        val claim = ClaimManager.getClaim(chunk)
-        return claim != null && claim == this
+    /**
+     * Sets multiple [ClaimPermission]s for a player.
+     */
+    fun setPermissions(player: Player, permissions: EnumSet<ClaimPermission>) {
+        val oldSize = this._permissions.size
+        this._permissions.getOrPut(player.uniqueId) { permissions }.apply {
+            addAll(permissions)
+            if (size != oldSize) this@Claim.markModified()
+        }
     }
 
+    /**
+     * @return Whether this claim contains the chunk [chunk].
+     */
+    fun containsChunk(chunk: ClaimChunk): Boolean = chunk in this._chunks
+
+    /**
+     * Does the same as [containsChunk], but converts a [Chunk] to a [ClaimChunk] first.
+     */
     fun containsChunk(chunk: Chunk): Boolean = this.containsChunk(ClaimChunk(chunk.world, chunk.chunkKey))
 
-    fun getChunks(): List<ClaimChunk> = ClaimManager.getChunksForClaim(this)
-
+    /**
+     * Adds a chunk to this claim.
+     * @return A claim chunk add result.
+     */
     fun addChunk(chunk: ClaimChunk): ClaimChunkAddResult {
         if (chunk.world != this.world) return ClaimChunkAddResult.FAILED_WRONG_WORLD
         if (ClaimManager.getClaim(chunk) == null) {
-            ClaimManager.addChunk(chunk, this)
-            this.chunkCount++
+            this._chunks.add(chunk)
             this.markModified()
             return ClaimChunkAddResult.SUCCESS
         } else {
@@ -67,66 +109,26 @@ class Claim(
         }
     }
 
-    fun removeChunk(chunk: ClaimChunk) {
-        ClaimManager.removeChunk(chunk)
-        this.chunkCount--
-        this.markModified()
-    }
+    /**
+     * Removes a chunk from this claim.
+     * @return Whether this remove call removed a chunk.
+     */
+    fun removeChunk(chunk: ClaimChunk): Boolean = this._chunks.remove(chunk).also { if (it) this.markModified() }
 
+    /**
+     * Sets [modified] to the current instant.
+     */
     private fun markModified() {
-        this.modifiedAt = Instant.now()
+        this.modified = Instant.now()
     }
 
-    fun serialize(): Map<String, Any> = mapOf(
-        "claimId" to this.claimId,
-        "owner" to this.owner,
-        "world" to this.world.uid,
-        "chunks" to this.getChunks(),
-    )
+    /**
+     * For serial use only.
+     */
+    internal fun getChunksForSerial(): Set<Long> = this._chunks.map { it.chunk }.toSet()
 
-    private fun loadChunks(chunks: List<ClaimChunk>): ClaimChunkAddResult {
-        chunks.forEach { chunk ->
-            // Shouldn't be possible, but check anyway
-            if (chunk.world != this.world) return@loadChunks ClaimChunkAddResult.FAILED_WRONG_WORLD
-            if (ClaimManager.getClaim(chunk) == null) {
-                ClaimManager.addChunk(chunk, this)
-                this.chunkCount++
-            } else {
-                return@loadChunks ClaimChunkAddResult.FAILED_CHUNK_ALREADY_CLAIMED
-            }
-        }
-        this.markModified()
-        return ClaimChunkAddResult.SUCCESS
-    }
-
-    companion object {
-        fun fromYml(claimId: UUID, yml: ConfigurationSection): Claim {
-            val storedId = yml.getUuid("id")
-            if (storedId != claimId) {
-                error("Requested and stored claim IDs do not match ($claimId, $storedId)! Please fix this manually.")
-            }
-            val owner = yml.getUuid("owner")
-            val world = yml.getUuid("world").toWorld()
-            world?.let {
-                // Expected chunk count
-                var chunkCount = yml.getInt("chunkCount")
-                val chunks = yml.getLongList("chunks")
-                // This means that getLongList was unable to convert some values in the list at `chunks` to longs
-                if (chunks.size != chunkCount) {
-                    NoGrief.logger.warning("Expected $chunkCount in claim $claimId, only found ${chunks.size}. Changing claim chunk count to match.")
-                    chunkCount = chunks.size
-                }
-
-                val claim = Claim(claimId, owner, world, chunkCount)
-                val result = claim.loadChunks(chunks.map { ClaimChunk(world, it) })
-                if (result != ClaimChunkAddResult.SUCCESS) {
-                    ClaimManager.removeClaim(claim)
-                    error("A chunk was not able to be added to a loaded claim. Reason: $result")
-                }
-                return claim
-            } ?: run {
-                error("Could not find world specified by claim $claimId")
-            }
-        }
-    }
+    /**
+     * For serial use only.
+     */
+    internal fun getPermsForSerial(): Map<UUID, EnumSet<ClaimPermission>> = this._permissions.toMap()
 }

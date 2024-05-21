@@ -1,17 +1,15 @@
-import org.jetbrains.kotlin.ir.backend.js.compile
-import xyz.jpenilla.resourcefactory.bukkit.BukkitPluginYaml
-import xyz.jpenilla.resourcefactory.paper.paperPluginYaml
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version("1.9.23")
-    id("io.papermc.paperweight.userdev") version("1.6.3")
-    id("xyz.jpenilla.run-paper") version("2.2.4")
-    id("xyz.jpenilla.resource-factory-bukkit-convention") version("1.1.1")
+    kotlin("jvm") version("1.9.24")
+    kotlin("plugin.serialization") version("1.9.24")
+    id("io.papermc.paperweight.userdev") version("1.7.1")
+    id("xyz.jpenilla.run-paper") version("2.3.0")
+    id("io.github.goooler.shadow") version("8.1.7")
 }
 
 group = "me.elephant1214.nogrief"
 version = "1.0.0-SNAPSHOT"
-description = "Test plugin for paperweight-userdev"
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -25,37 +23,50 @@ repositories {
     maven("https://repo.purpurmc.org/snapshots")
 }
 
+configurations.implementation {
+    extendsFrom(configurations.getByName("shadow"))
+}
+
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
-    // implementation("org.purpurmc.purpur:purpur-api:1.20.6-R0.1-SNAPSHOT")
+    shadow(kotlin("stdlib-jdk8"))
+    shadow("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     paperweight.devBundle("org.purpurmc.purpur", "1.20.6-R0.1-SNAPSHOT")
-    // paperweight.paperDevBundle("1.20.6-R0.1-SNAPSHOT")
-    // paperweight.foliaDevBundle("1.20.6-R0.1-SNAPSHOT")
-    // paperweight.devBundle("com.example.paperfork", "1.20.6-R0.1-SNAPSHOT")
 }
 
 tasks {
+    runServer {
+        minecraftVersion("1.20.6")
+        dependsOn(jar)
+    }
+    
     compileJava {
         options.encoding = "UTF-8"
         options.release = 21
     }
-    compileKotlin {
-        kotlinOptions.jvmTarget = "21"
-
-        all {
-            kotlinOptions.freeCompilerArgs += listOf(
-                "-opt-in=kotlin.io.path.ExperimentalPathApi"
-            )
+    withType<KotlinCompile>().configureEach {
+        kotlinOptions {
+            jvmTarget = "21"
+            freeCompilerArgs += "-Xopt-in=kotlin.io.path.ExperimentalPathApi"
+            freeCompilerArgs += "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
         }
     }
     javadoc {
         options.encoding = Charsets.UTF_8.name()
     }
-}
-
-paperPluginYaml {
-    main = "me.elephant1214.nogrief.NoGriefKt"
-    authors.add("Elephant_1214")
-    apiVersion = "1.20.6"
-    version = rootProject.version.toString()
+    shadowJar {
+        configurations = listOf(project.configurations.getByName("shadow"))
+        relocate("org.jetbrains.kotlin", "me.elephant1214.nogrief.kotlin")
+        relocate("org.jetbrains.kotlinx", "me.elephant1214.nogrief.kotlinx")
+        mergeServiceFiles()
+    }
+    jar {
+        dependsOn(shadowJar)
+    }
+    processResources {
+        val props = mapOf("version" to version)
+        inputs.properties(props)
+        filesMatching(listOf("paper-plugin.yml", "plugin.yml")) {
+            expand(props)
+        }
+    }
 }

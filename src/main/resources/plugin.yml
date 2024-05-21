@@ -1,0 +1,5 @@
+name: NoGrief
+version: "$version"
+main: me.elephant1214.nogrief.NoGrief
+author: Elephant_1214
+api-version: "1.20"

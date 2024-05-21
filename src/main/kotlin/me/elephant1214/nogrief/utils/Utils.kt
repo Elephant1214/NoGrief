@@ -1,34 +1,17 @@
 package me.elephant1214.nogrief.utils
 
-import org.bukkit.Bukkit
-import org.bukkit.World
-import org.bukkit.block.BlockFace
-import org.bukkit.configuration.ConfigurationSection
-import java.util.*
+import me.elephant1214.nogrief.NoGrief
+import me.elephant1214.nogrief.constants.NO_PERMISSION
+import me.elephant1214.nogrief.constants.NO_PISTONS_OUTSIDE_CLAIMS
+import net.kyori.adventure.title.TitlePart
+import org.bukkit.entity.Player
 
-fun ConfigurationSection.getUuid(path: String): UUID {
-    val value = this.getString(path)?.trim()
-    if (value.isNullOrEmpty()) {
-        error("Expected a UUID at path `$path`, but found null or blank.")
-    }
-
-    return try {
-        UUID.fromString(value)
-    } catch (e: IllegalArgumentException) {
-        error("Unable to convert path `$path` to a UUID: ${e.message}")
-    }
+fun Player.sendNoPermission() {
+    this.sendTitlePart(TitlePart.SUBTITLE, NO_PERMISSION)
 }
 
-fun UUID.toWorld(): World? = Bukkit.getWorld(this)
-
-fun String.toUuid(): UUID = UUID.fromString(this)
-
-fun horizontalFaces(): Array<BlockFace> = arrayOf(
-    BlockFace.NORTH,
-    BlockFace.EAST,
-    BlockFace.SOUTH,
-    BlockFace.WEST,
-)
-
-fun <T> deserializationTypeError(itemName: String, item: Any?, expected: Class<T>): String =
-    "Expected ${expected.simpleName} while deserializing \"$itemName\", should be ${expected.simpleName}, found (${item?.javaClass?.simpleName})"
+fun Player.sendPistonMessage() {
+    if (!NoGrief.cfg.allowPistonsOutsideOfClaims) {
+        this.sendTitlePart(TitlePart.SUBTITLE, NO_PISTONS_OUTSIDE_CLAIMS)
+    }
+}

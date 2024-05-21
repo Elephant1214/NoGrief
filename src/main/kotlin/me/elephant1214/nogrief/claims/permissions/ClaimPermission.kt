@@ -1,0 +1,17 @@
+package me.elephant1214.nogrief.claims.permissions
+
+import kotlinx.serialization.Serializable
+import me.elephant1214.nogrief.constants.*
+
+@Serializable
+enum class ClaimPermission(val permName: String, val description: String) {
+    BREAK(BREAK_PERM_NAME, BREAK_PERM_DESC),
+    PLACE(PLACE_PERM_NAME, PLACE_PERM_DESC),
+    CONTAINERS(CONTAINERS_PERM_NAME, CONTAINERS_PERM_DESC),
+    ENTITIES(ENTITIES_PERM_NAME, ENTITIES_PERM_DESC),
+    EXPLOSIONS(EXPLOSIONS_PERM_NAME, EXPLOSIONS_PERM_DESC),
+    FIRE(FIRE_PERM_NAME, FIRE_PERM_DESC),
+    INTERACT(INTERACT_PERM_NAME, INTERACT_PERM_DESC),
+    TILE_ENTITIES(TILE_ENTITIES_PERM_NAME, TILE_ENTITIES_PERM_DESC),
+    MANAGE(MANAGE_PERM_NAME, MANAGE_PERM_DESC);
+}
