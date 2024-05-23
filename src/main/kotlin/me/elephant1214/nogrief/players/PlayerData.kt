@@ -4,4 +4,8 @@ import kotlinx.serialization.Serializable
 import me.elephant1214.nogrief.NoGrief
 
 @Serializable
-data class PlayerData(val remainingClaimChunks: Int = NoGrief.cfg.initialClaimChunks)
+data class PlayerData(
+    var remainingClaimChunks: Int = NoGrief.cfg.initialClaimChunks
+) {
+    fun hasClaimChunks(): Boolean = this.remainingClaimChunks > 0
+}

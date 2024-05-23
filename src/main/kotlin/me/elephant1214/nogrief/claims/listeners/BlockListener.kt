@@ -2,8 +2,8 @@ package me.elephant1214.nogrief.claims.listeners
 
 import me.elephant1214.nogrief.NoGrief
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.utils.sendNoPermission
-import me.elephant1214.nogrief.utils.sendPistonMessage
+import me.elephant1214.nogrief.constants.sendNoPermission
+import me.elephant1214.nogrief.constants.sendPistonMessage
 import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.TileState
@@ -63,7 +63,7 @@ object BlockListener : Listener {
     fun onBlockPlace(event: BlockPlaceEvent) {
         val claim = ClaimManager.getClaim(event.block.chunk)
         if (claim == null) {
-            if (event.blockPlaced is Piston) {
+            if (event.blockPlaced.blockData is Piston) {
                 event.player.sendPistonMessage()
             }
             return
@@ -114,7 +114,7 @@ object BlockListener : Listener {
             EquipmentSlot.OFF_HAND -> event.player.inventory.itemInOffHand
             else -> return
         }
-        if (usedItem.type.name.lowercase().contains("BUCKET")) {
+        if (usedItem.type.name.uppercase().contains("BUCKET")) {
             event.isCancelled = true
             event.player.sendNoPermission()
         }

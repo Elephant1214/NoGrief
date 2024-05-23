@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    idea
     kotlin("jvm") version("1.9.24")
     kotlin("plugin.serialization") version("1.9.24")
     id("io.papermc.paperweight.userdev") version("1.7.1")
@@ -19,8 +20,9 @@ paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArt
 
 repositories {
     mavenCentral()
-    maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.purpurmc.org/snapshots")
+    maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://www.jitpack.io")
 }
 
 configurations.implementation {
@@ -30,6 +32,16 @@ configurations.implementation {
 dependencies {
     shadow(kotlin("stdlib-jdk8"))
     shadow("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    shadow("cloud.commandframework:cloud-core:1.8.4") {
+        exclude("io.leangen.geantyref", "geantyref")
+        exclude("net.kyori.adventure")
+    }
+    shadow("cloud.commandframework:cloud-paper:1.8.4")
+    shadow("cloud.commandframework:cloud-annotations:1.8.4")
+    shadow("cloud.commandframework:cloud-minecraft-extras:1.8.4")
+    shadow("com.github.Elephant1214:CCFUtils:main-SNAPSHOT") {
+        isTransitive = false
+    }
     paperweight.devBundle("org.purpurmc.purpur", "1.20.6-R0.1-SNAPSHOT")
 }
 
@@ -38,7 +50,6 @@ tasks {
         minecraftVersion("1.20.6")
         dependsOn(jar)
     }
-    
     compileJava {
         options.encoding = "UTF-8"
         options.release = 21
@@ -55,8 +66,13 @@ tasks {
     }
     shadowJar {
         configurations = listOf(project.configurations.getByName("shadow"))
-        relocate("org.jetbrains.kotlin", "me.elephant1214.nogrief.kotlin")
-        relocate("org.jetbrains.kotlinx", "me.elephant1214.nogrief.kotlinx")
+        relocate("org.jetbrains", "me.elephant1214.nogrief.deps.org.jetbrains")
+        relocate("org.intellij", "me.elephant1214.nogrief.deps.org.intellij")
+        relocate("kotlin", "me.elephant1214.nogrief.deps.kotlin")
+        relocate("kotlinx", "me.elephant1214.nogrief.deps.kotlin")
+        relocate("net.kyori.examination", "me.elephant1214.nogrief.deps.net.kyori.examination")
+        relocate("cloud.commandframework", "me.elephant1214.nogrief.deps.cloud.commandframework")
+        relocate("me.elephant1214.ccfutils", "me.elephant1214.nogrief.deps.ccfutils")
         mergeServiceFiles()
     }
     jar {

@@ -1,7 +1,7 @@
 package me.elephant1214.nogrief.claims.listeners
 
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.utils.sendNoPermission
+import me.elephant1214.nogrief.constants.sendNoPermission
 import org.bukkit.Material
 import org.bukkit.block.Container
 import org.bukkit.block.TileState

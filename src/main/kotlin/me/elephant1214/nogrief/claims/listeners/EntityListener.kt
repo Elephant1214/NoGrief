@@ -1,7 +1,7 @@
 package me.elephant1214.nogrief.claims.listeners
 
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.utils.sendNoPermission
+import me.elephant1214.nogrief.constants.sendNoPermission
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal
 import org.bukkit.entity.Enemy
 import org.bukkit.entity.Player
@@ -14,16 +14,22 @@ import org.bukkit.event.player.PlayerInteractEntityEvent
 
 object EntityListener : Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-    fun onEntityDamageEndCrystal(event: EntityDamageByEntityEvent) {
+    fun onEntityDamageEntity(event: EntityDamageByEntityEvent) {
         val player = when {
-            event.damager is Player && (event.damager is Projectile) -> (event.damager as Projectile).shooter as Player
+            event.damager is Projectile && (event.damager as Projectile).shooter is Player -> (event.damager as Projectile).shooter as Player
             event.damager is Player -> event.damager as Player
             else -> return
         }
 
         player.let {
-            val claim = ClaimManager.getClaim(event.entity.chunk) ?: return@onEntityDamageEndCrystal
-            if (event.entity is Enemy) return@onEntityDamageEndCrystal
+            val claim = ClaimManager.getClaim(event.entity.chunk)
+            if (claim != null && event.entity is Player && !claim.containsChunk(player.chunk) && !claim.hasEntitiesPerm(player)) {
+                event.isCancelled = true
+                player.sendNoPermission()
+                return
+            }
+            if (claim == null) return
+            if (event.entity is Enemy) return@onEntityDamageEntity
 
             val hasEntitiesPerm = claim.hasEntitiesPerm(player)
             val isEndCrystal = event.entity is EndCrystal

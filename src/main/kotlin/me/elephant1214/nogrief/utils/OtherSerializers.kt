@@ -2,7 +2,7 @@ package me.elephant1214.nogrief.utils
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.builtins.SetSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
@@ -54,17 +54,18 @@ object WorldSerializer : KSerializer<World> {
     }
 }
 
-object ClaimPermsSerializer : KSerializer<EnumSet<ClaimPermission>> {
-    override val descriptor = serialDescriptor<Set<ClaimPermission>>()
+object ClaimPermEnumSetSerializer : KSerializer<EnumSet<ClaimPermission>> {
+    override val descriptor = buildClassSerialDescriptor("EnumSet") {
+        element<String>("permissions")
+    }
 
     override fun serialize(encoder: Encoder, value: EnumSet<ClaimPermission>) {
-        val composite = encoder.beginStructure(descriptor)
-        composite.encodeSerializableElement(descriptor, 0, SetSerializer(ClaimPermission.serializer()), value)
-        composite.endStructure(descriptor)
+        val permissions = value.toList()
+        encoder.encodeSerializableValue(ListSerializer(ClaimPermission.serializer()), permissions)
     }
 
     override fun deserialize(decoder: Decoder): EnumSet<ClaimPermission> {
-        val set = decoder.decodeSerializableValue(SetSerializer(ClaimPermission.serializer()))
-        return EnumSet.copyOf(set)
+        val permissions = decoder.decodeSerializableValue(ListSerializer(ClaimPermission.serializer()))
+        return EnumSet.copyOf(permissions)
     }
 }

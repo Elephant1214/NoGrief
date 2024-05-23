@@ -3,6 +3,7 @@ package me.elephant1214.nogrief.claims
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import me.elephant1214.nogrief.NoGrief
+import me.elephant1214.nogrief.players.PlayerManager
 import org.bukkit.Chunk
 import java.nio.file.Path
 import java.util.*
@@ -20,17 +21,25 @@ object ClaimManager {
 
     fun addClaim(claim: Claim) = this._claims.add(claim)
 
-    fun removeClaim(claim: Claim) = this._claims.remove(claim)
+    fun deleteClaim(claim: Claim) {
+        this._claims.remove(claim)
+        PlayerManager.getPlayer(claim.getPlayerOwner()).remainingClaimChunks += claim.chunkCount()
+        this.claimsDir.resolve("${claim.claimId}.json").deleteIfExists()
+    }
     
     internal fun saveClaims() {
         try {
             this._claims.forEach { claim ->
-                val file = this.claimsDir.resolve("${claim.claimId}.json").createFile()
-                NoGrief.JSON.encodeToStream(file, file.outputStream())
+                val file = this.getClaimPath(claim.claimId)
+                NoGrief.JSON.encodeToStream(claim, file.outputStream())
             }
         } catch (e: Exception) {
-            NoGrief.logger.severe("Failed to save claims: ${e.message}")
+            NoGrief.logger.severe("Failed to save claim: ${e.stackTrace}")
         }
+    }
+    
+    private fun getClaimPath(uuid: UUID): Path = this.claimsDir.resolve("$uuid.json").apply {
+        if (!this.exists()) this.createFile()
     }
 
     internal fun loadClaims() {

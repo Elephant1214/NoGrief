@@ -1,30 +1,76 @@
 package me.elephant1214.nogrief.constants
 
-const val BREAK_PERM_NAME = "Break"
-const val BREAK_PERM_DESC = "Allows breaking of all blocks other than tile entities and explosives."
+import me.elephant1214.nogrief.NoGrief
+import me.elephant1214.nogrief.claims.permissions.ClaimPermission
+import me.elephant1214.nogrief.players.PlayerManager
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Chunk
+import org.bukkit.entity.Player
 
-const val PLACE_PERM_NAME = "Place"
-const val PLACE_PERM_DESC = "Allows placing all blocks other than tile entities and explosives."
+val CANT_DO_THIS_HERE = Component.text("You don't have permission to do this here!", NamedTextColor.RED)
+val NO_PISTONS_OUTSIDE_CLAIMS = Component.text("Pistons cannot move outside of claims.", NamedTextColor.YELLOW)
 
-const val CONTAINERS_PERM_NAME = "Container Access"
-const val CONTAINERS_PERM_DESC = "Allows accessing all blocks that can hold items."
+fun Player.sendNoPermission() {
+    this.sendActionBar(CANT_DO_THIS_HERE)
+}
 
-const val ENTITIES_PERM_NAME = "Spawn & Attack Entities"
-const val ENTITIES_PERM_DESC = "Allows spawning and attacking of entities."
+fun Player.sendPistonMessage() {
+    if (!NoGrief.cfg.allowPistonsOutsideOfClaims) {
+        this.sendActionBar(NO_PISTONS_OUTSIDE_CLAIMS)
+    }
+}
 
-const val EXPLOSIONS_PERM_NAME = "Explosions"
-const val EXPLOSIONS_PERM_DESC = "Allows causing explosions and placing blocks that explode."
+val NOT_ENOUGH_CLAIM_CHUNKS = Component.text("You do not have enough claim chunks to do this!", NamedTextColor.RED)
+val NOT_IN_CLAIM = Component.text("You must be in a claim to do this!", NamedTextColor.RED)
+val NO_PERMISSION = Component.text("You do not have permission to do this!", NamedTextColor.RED)
+val ALREADY_CLAIMED = Component.text("This chunk is already claimed!", NamedTextColor.RED)
+val NO_CONNECTING_CLAIM = Component.text("No connecting claim managed by you was found!", NamedTextColor.RED)
 
-const val FIRE_PERM_NAME = "Fire"
-const val FIRE_PERM_DESC = "Allows different methods of starting fires."
+val DELETE_CLAIM = Component.text("The claim was successfully deleted.", NamedTextColor.GREEN)
+val DELETE_CLAIM_NO_CHUNKS =
+    Component.text("The claim was deleted as there are no chunks remaining.", NamedTextColor.GREEN)
+val REMOVE_CHUNK = Component.text("The chunk was successfully unclaimed.", NamedTextColor.GREEN)
+val CREATED_CLAIM = Component.text("A claim was created!", NamedTextColor.GREEN)
 
-const val INTERACT_PERM_NAME = "Interact"
-const val INTERACT_PERM_DESC =
-    "Allows all interactions, such as doors, buttons, levers, entities, etc., other than tile entities."
+const val OWNERSHIP_TRANSFERRED = "You transferred ownership of %s to "
+fun Player.sendTransferredOwnership(claim: String, player: Player) {
+    this.sendMessage(
+        Component.text(OWNERSHIP_TRANSFERRED.format(claim), NamedTextColor.GREEN).append(player.displayName())
+    )
+}
 
-const val TILE_ENTITIES_PERM_NAME = "Tile Entities"
-const val TILE_ENTITIES_PERM_DESC = "Allows building, placing, and interacting with tile entities."
+const val CLAIM_RENAMED = "%s has been renamed to %s"
+fun Player.sendRenamed(oldName: String, newName: String) {
+    this.sendMessage(Component.text(CLAIM_RENAMED.format(oldName, newName), NamedTextColor.GREEN))
+}
 
-const val MANAGE_PERM_NAME = "Claim Management"
-const val MANAGE_PERM_DESC =
-    "Allows a player to manage other players' permissions in claim, but only when the target player does not also have Manage."
+const val NEW_OWNER = "You are now the owner of %s"
+fun Player.sendNewOwner(claim: String) {
+    this.sendMessage(Component.text(NEW_OWNER.format(claim), NamedTextColor.GREEN))
+}
+
+const val PERMISSIONS_UPDATED = "Updated the permission %s for "
+fun Player.sendPermissionsUpdated(permission: ClaimPermission, target: Player) {
+    this.sendMessage(
+        Component.text(PERMISSIONS_UPDATED.format(permission.toString()), NamedTextColor.GREEN)
+            .append(target.displayName())
+    )
+}
+
+const val CHUNK_CLAIMED = "Chunk %d, %d was claimed!"
+fun Player.sendChunkClaimed(chunk: Chunk) {
+    this.sendMessage(Component.text(CHUNK_CLAIMED.format(chunk.x, chunk.z)))
+}
+
+const val CLAIM_CHUNK_COUNT = "You currently have %d claim chunks available"
+fun Player.sendClaimChunkCount() {
+    this.sendMessage(Component.text(CLAIM_CHUNK_COUNT.format(PlayerManager.getPlayer(this).remainingClaimChunks)))
+}
+
+val TOGGLED_CLAIM_BYPASSING = Component.text("Toggled claim bypassing ", NamedTextColor.YELLOW)
+val ON = Component.text("ON", NamedTextColor.GREEN)
+val OFF = Component.text("OFF", NamedTextColor.RED)
+fun Player.sendClaimBypassState(state: Boolean) {
+    this.sendMessage(TOGGLED_CLAIM_BYPASSING.append(if (state) ON else OFF))
+}

@@ -6,6 +6,7 @@ import me.elephant1214.nogrief.players.PlayerManager
 import me.elephant1214.nogrief.utils.ClaimSerializer
 import org.bukkit.Bukkit
 import org.bukkit.Chunk
+import org.bukkit.OfflinePlayer
 import org.bukkit.World
 import org.bukkit.entity.Player
 import java.time.Instant
@@ -14,74 +15,95 @@ import java.util.*
 @Serializable(ClaimSerializer::class)
 class Claim(
     val claimId: UUID = ClaimManager.newClaimID(),
+    var name: String,
     ownerIn: UUID,
     val world: World,
     private val _chunks: MutableSet<ClaimChunk> = mutableSetOf(),
-    private val _permissions: MutableMap<UUID, EnumSet<ClaimPermission>> = mutableMapOf(
-        ownerIn to EnumSet.allOf(ClaimPermission::class.java)
-    ),
+    private val _permissions: MutableMap<UUID, EnumSet<ClaimPermission>> = mutableMapOf(),
     modifiedIn: Instant = Instant.now()
 ) {
     var owner: UUID = ownerIn
         set(value) {
+            setPermissions(Bukkit.getPlayer(this.owner)!!, EnumSet.allOf(ClaimPermission::class.java), true)
             field = value
-            setPermissions(Bukkit.getPlayer(owner)!!, EnumSet.allOf(ClaimPermission::class.java))
         }
 
     var modified: Instant = modifiedIn
         private set
 
-    constructor(owner: UUID, world: World, chunk: ClaimChunk) : this(
+    private constructor(name: String, owner: UUID, chunk: ClaimChunk) : this(
+        name = name,
         ownerIn = owner,
-        world = world,
-    ) {
-        this._chunks.add(chunk)
-    }
+        world = chunk.world,
+    )
+
+    /**
+     * Will be null if the player is not in the game.
+     */
+    fun getPlayerOwner(): OfflinePlayer = Bukkit.getOfflinePlayer(this.owner)
+
+    fun chunkCount(): Int = this._chunks.size
+
+    fun isOwner(player: Player): Boolean = this.owner == player.uniqueId
 
     /**
      * @return Whether [player] has [permission] in this claim.
      */
     private fun hasPermission(player: Player, permission: ClaimPermission): Boolean =
-        PlayerManager.isBypassing(player) || this._permissions[player.uniqueId]?.contains(permission) ?: false
+        this.owner == player.uniqueId || PlayerManager.isBypassing(player) || this._permissions[player.uniqueId]?.contains(
+            permission
+        ) ?: false
 
     fun canBreak(player: Player): Boolean = hasPermission(player, ClaimPermission.BREAK)
-    
+
     fun canPlace(player: Player): Boolean = hasPermission(player, ClaimPermission.PLACE)
-    
+
     fun canAccessContainers(player: Player): Boolean = hasPermission(player, ClaimPermission.CONTAINERS)
-    
+
     fun hasEntitiesPerm(player: Player): Boolean = hasPermission(player, ClaimPermission.ENTITIES)
-    
+
     fun hasExplosionPerm(player: Player): Boolean = hasPermission(player, ClaimPermission.EXPLOSIONS)
-    
+
     fun hasFirePerm(player: Player): Boolean = hasPermission(player, ClaimPermission.FIRE)
-    
+
     fun canInteract(player: Player): Boolean = hasPermission(player, ClaimPermission.INTERACT)
-    
+
     fun hasTilePerm(player: Player): Boolean = hasPermission(player, ClaimPermission.TILE_ENTITIES)
-    
+
     fun canManageClaim(player: Player): Boolean = hasPermission(player, ClaimPermission.MANAGE)
-    
+
     /**
      * Sets a [ClaimPermission] for a player.
      */
-    fun setPermission(player: Player, permission: ClaimPermission) {
-        val oldSize = this._permissions.size
-        this._permissions.getOrPut(player.uniqueId) { EnumSet.of(permission) }.apply {
-            add(permission)
-            if (size != oldSize) this@Claim.markModified()
+    fun setPermission(player: Player, permission: ClaimPermission, state: Boolean) {
+        if (!this._permissions.containsKey(player.uniqueId)) {
+            this._permissions[player.uniqueId] = EnumSet.noneOf(ClaimPermission::class.java)
         }
+
+        val set = this._permissions[player.uniqueId]!!
+        if (state) {
+            set.add(permission)
+        } else {
+            set.remove(permission)
+        }
+        this@Claim.markModified()
     }
 
     /**
      * Sets multiple [ClaimPermission]s for a player.
      */
-    fun setPermissions(player: Player, permissions: EnumSet<ClaimPermission>) {
-        val oldSize = this._permissions.size
-        this._permissions.getOrPut(player.uniqueId) { permissions }.apply {
-            addAll(permissions)
-            if (size != oldSize) this@Claim.markModified()
+    fun setPermissions(player: Player, permissions: EnumSet<ClaimPermission>, state: Boolean) {
+        if (!this._permissions.containsKey(player.uniqueId)) {
+            this._permissions[player.uniqueId] = EnumSet.noneOf(ClaimPermission::class.java)
         }
+
+        val set = this._permissions[player.uniqueId]!!
+        if (state) {
+            set.addAll(permissions)
+        } else {
+            set.removeAll(permissions)
+        }
+        this@Claim.markModified()
     }
 
     /**
@@ -102,6 +124,7 @@ class Claim(
         if (chunk.world != this.world) return ClaimChunkAddResult.FAILED_WRONG_WORLD
         if (ClaimManager.getClaim(chunk) == null) {
             this._chunks.add(chunk)
+            PlayerManager.getPlayer(this.getPlayerOwner()).remainingClaimChunks -= 1
             this.markModified()
             return ClaimChunkAddResult.SUCCESS
         } else {
@@ -113,7 +136,13 @@ class Claim(
      * Removes a chunk from this claim.
      * @return Whether this remove call removed a chunk.
      */
-    fun removeChunk(chunk: ClaimChunk): Boolean = this._chunks.remove(chunk).also { if (it) this.markModified() }
+    fun removeChunk(chunk: ClaimChunk) {
+        val removed = this._chunks.remove(chunk)
+        if (removed) {
+            PlayerManager.getPlayer(this.getPlayerOwner()).remainingClaimChunks += 1
+            this.markModified()
+        }
+    }
 
     /**
      * Sets [modified] to the current instant.
@@ -131,4 +160,15 @@ class Claim(
      * For serial use only.
      */
     internal fun getPermsForSerial(): Map<UUID, EnumSet<ClaimPermission>> = this._permissions.toMap()
+
+    companion object {
+        fun createClaim(owner: Player, chunk: ClaimChunk): ClaimChunkAddResult {
+            val claim = Claim("${owner.displayName()}'s Claim", owner.uniqueId, chunk)
+            val result = claim.addChunk(chunk)
+            if (result == ClaimChunkAddResult.SUCCESS) {
+                ClaimManager.addClaim(claim)
+            }
+            return result
+        }
+    }
 }
