@@ -88,6 +88,10 @@ class Claim(
         } else {
             set.remove(permission)
         }
+        if (set.isEmpty()) {
+            this._permissions.remove(player.uniqueId)
+        }
+        
         this@Claim.markModified()
     }
 
@@ -105,6 +109,10 @@ class Claim(
         } else {
             set.removeAll(permissions)
         }
+        if (set.isEmpty()) {
+            this._permissions.remove(player.uniqueId)
+        }
+        
         this@Claim.markModified()
     }
 
