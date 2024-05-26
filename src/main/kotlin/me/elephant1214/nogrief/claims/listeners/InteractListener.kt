@@ -8,7 +8,6 @@ import org.bukkit.block.TileState
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
-import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot
 
@@ -17,13 +16,12 @@ object InteractListener : Listener {
     fun onInteractTile(event: PlayerInteractEvent) {
         // TODO: Handle cases where players can't open a container but are crouching and
         //  right clicking it to build if someone complains
-        if (event.action != Action.LEFT_CLICK_BLOCK) return
+        if (!event.action.isRightClick) return
         val block = event.clickedBlock ?: return
         val claim = ClaimManager.getClaim(block.chunk) ?: return
-        if ((block.state !is Container || claim.canAccessContainers(event.player)) || (block.state !is TileState || claim.hasTilePerm(
-                event.player
-            ))
-        ) return
+        if (block.state is Container && claim.canAccessContainers(event.player)) return
+        if (block.state is TileState && claim.hasTilePerm(event.player)) return
+        if (block.type.toString().uppercase().contains("ANVIL") && claim.hasTilePerm(event.player)) return
         event.isCancelled = true
         event.player.sendCantDoThisHere()
     }

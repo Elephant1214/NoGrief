@@ -69,7 +69,11 @@ object ClaimPermEnumSetSerializer : KSerializer<EnumSet<ClaimPermission>> {
 
     override fun deserialize(decoder: Decoder): EnumSet<ClaimPermission> {
         val permissions = decoder.decodeSerializableValue(ListSerializer(ClaimPermission.serializer()))
-        return EnumSet.copyOf(permissions)
+        return if (permissions.isEmpty()) {
+            EnumSet.noneOf(ClaimPermission::class.java)
+        } else {
+            EnumSet.copyOf(permissions)
+        }
     }
 }
 
