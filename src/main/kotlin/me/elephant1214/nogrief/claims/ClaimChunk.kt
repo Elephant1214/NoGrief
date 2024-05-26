@@ -7,18 +7,18 @@ import org.bukkit.World
 @Serializable
 data class ClaimChunk(
     val world: World,
-    val chunk: Long
+    val chunk: Chunk
 ) {
-    constructor(chunk: Chunk) : this(chunk.world, chunk.chunkKey)
+    constructor(chunk: Chunk) : this(chunk.world, chunk)
 
-    constructor(world: World, x: Int, y: Int) : this(world, Chunk.getChunkKey(x, y))
+    constructor(world: World, x: Int, y: Int) : this(world, world.getChunkAt(x, y))
 
-    fun isSameChunk(claimChunk: ClaimChunk): Boolean = this.world == claimChunk.world && this.chunk == claimChunk.chunk
+    fun getChunkKey(): Long = this.chunk.chunkKey
 
     override fun toString(): String = "ClaimChunk(world = $world, chunk = $chunk)"
 
     companion object {
         fun fromLongSet(world: World, chunks: Set<Long>): MutableSet<ClaimChunk> =
-            chunks.map { ClaimChunk(world, it) }.toMutableSet()
+            chunks.map { ClaimChunk(world, world.getChunkAt(it)) }.toMutableSet()
     }
 }

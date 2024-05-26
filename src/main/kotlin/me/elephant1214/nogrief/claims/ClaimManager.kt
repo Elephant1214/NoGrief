@@ -20,7 +20,7 @@ object ClaimManager {
 
     fun getClaim(chunk: ClaimChunk): Claim? = this._claims.find { it.containsChunk(chunk) }
 
-    fun getClaim(chunk: Chunk): Claim? = this.getClaim(ClaimChunk(chunk.world, chunk.chunkKey))
+    fun getClaim(chunk: Chunk): Claim? = this.getClaim(ClaimChunk(chunk.world, chunk))
 
     fun addClaim(claim: Claim) = this._claims.add(claim)
 
@@ -29,6 +29,8 @@ object ClaimManager {
         PlayerManager.getPlayer(claim.getPlayerOwner()).remainingClaimChunks += claim.chunkCount()
         this.claimsDir.resolve("${claim.claimId}.json").deleteIfExists()
     }
+    
+    fun getClaims(): Set<Claim> = this._claims.toSet()
 
     internal fun saveClaims() {
         try {

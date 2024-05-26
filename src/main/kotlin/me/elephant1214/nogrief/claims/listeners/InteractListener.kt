@@ -1,10 +1,13 @@
 package me.elephant1214.nogrief.claims.listeners
 
+import me.elephant1214.nogrief.claims.Claim
 import me.elephant1214.nogrief.claims.ClaimManager
 import me.elephant1214.nogrief.constants.sendCantDoThisHere
 import org.bukkit.Material
+import org.bukkit.block.Block
 import org.bukkit.block.Container
 import org.bukkit.block.TileState
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -19,11 +22,23 @@ object InteractListener : Listener {
         if (!event.action.isRightClick) return
         val block = event.clickedBlock ?: return
         val claim = ClaimManager.getClaim(block.chunk) ?: return
-        if (block.state is Container && claim.canAccessContainers(event.player)) return
-        if (block.state is TileState && claim.hasTilePerm(event.player)) return
-        if (block.type.toString().uppercase().contains("ANVIL") && claim.hasTilePerm(event.player)) return
-        event.isCancelled = true
-        event.player.sendCantDoThisHere()
+        
+        if (!canInteract(block, claim, event.player)) {
+            event.isCancelled = true
+            event.player.sendCantDoThisHere()
+        }
+    }
+    
+    private fun canInteract(block: Block, claim: Claim, player: Player): Boolean {
+        val hasTilePerm = claim.hasTilePerm(player)
+        
+        return when {
+            block.state is Container -> claim.canAccessContainers(player)
+            block.state is TileState -> hasTilePerm
+            block.type.toString().uppercase().contains("ANVIL") -> hasTilePerm
+            block.type.toString().uppercase().contains("DOOR") -> true
+            else -> claim.canInteract(player)
+        }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)

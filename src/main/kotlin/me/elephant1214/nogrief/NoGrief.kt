@@ -22,7 +22,9 @@ import me.elephant1214.nogrief.configuration.NoGriefConfig
 import me.elephant1214.nogrief.listeners.DataListener
 import me.elephant1214.nogrief.locale.LocaleManager
 import me.elephant1214.nogrief.players.PlayerManager
+import me.elephant1214.nogrief.squaremap.hook.SquaremapHook
 import net.kyori.adventure.text.minimessage.MiniMessage
+import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
 import java.nio.file.Path
@@ -41,19 +43,13 @@ object NoGrief : JavaPlugin() {
     val dataDir: Path = this.dataFolder.toPath().apply {
         if (!this@apply.exists()) this@apply.createDirectories()
     }
-    private val cfgFile = dataDir.resolve("config.json").apply {
-        if (!this@apply.exists()) this@apply.createFile()
-    }
+    private val cfgFile = dataDir.resolve("config.json")
 
     private lateinit var commandManager: PaperCommandManager<CommandSender>
     private lateinit var annotationParser: AnnotationParser<CommandSender>
-    var cfg: NoGriefConfig
+    var cfg: NoGriefConfig = NoGriefConfig()
         private set
-
-    init {
-        this.cfg = loadCfg()
-        this.saveCfg()
-    }
+    private var squaremapHook: SquaremapHook? = null
 
     private fun loadCfg(): NoGriefConfig = try {
         JSON.decodeFromStream<NoGriefConfig>(this.cfgFile.inputStream())
@@ -62,6 +58,10 @@ object NoGrief : JavaPlugin() {
     }
 
     fun reloadCfg() {
+        if (!this.cfgFile.exists()) {
+            this.cfgFile.createFile()
+            this.saveCfg()
+        }
         this.cfg = loadCfg()
     }
 
@@ -70,16 +70,26 @@ object NoGrief : JavaPlugin() {
     }
 
     override fun onEnable() {
+        this.reloadCfg()
         LocaleManager.loadMessages()
         this.setupCommandManager()
         this.registerCommands()
 
         ClaimManager.loadClaims()
         this.registerListeners()
+
+        if (Bukkit.getPluginManager().isPluginEnabled("squaremap")) {
+            this.squaremapHook = SquaremapHook
+            this.logger.info("Squaremap found, enabled claim display hook")
+        }
     }
 
     override fun onDisable() {
         this.fullSave()
+
+        if (this.squaremapHook != null) {
+            this.squaremapHook!!.disable()
+        }
     }
 
     private fun registerListeners() {

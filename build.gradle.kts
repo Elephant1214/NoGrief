@@ -42,6 +42,7 @@ dependencies {
     shadow("com.github.Elephant1214:CCFUtils:main-SNAPSHOT") {
         isTransitive = false
     }
+    implementation("xyz.jpenilla:squaremap-api:1.2.3")
     paperweight.devBundle("org.purpurmc.purpur", "1.20.6-R0.1-SNAPSHOT")
 }
 

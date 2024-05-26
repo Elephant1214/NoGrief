@@ -43,6 +43,8 @@ class Claim(
      * Will be null if the player is not in the game.
      */
     fun getPlayerOwner(): OfflinePlayer = Bukkit.getOfflinePlayer(this.owner)
+    
+    fun getChunks(): Set<ClaimChunk> = this._chunks.toSet()
 
     fun chunkCount(): Int = this._chunks.size
 
@@ -124,7 +126,7 @@ class Claim(
     /**
      * Does the same as [containsChunk], but converts a [Chunk] to a [ClaimChunk] first.
      */
-    fun containsChunk(chunk: Chunk): Boolean = this.containsChunk(ClaimChunk(chunk.world, chunk.chunkKey))
+    fun containsChunk(chunk: Chunk): Boolean = this.containsChunk(ClaimChunk(chunk.world, chunk))
 
     /**
      * Adds a chunk to this claim.
@@ -164,7 +166,7 @@ class Claim(
     /**
      * For serial use only.
      */
-    internal fun getChunksForSerial(): Set<Long> = this._chunks.map { it.chunk }.toSet()
+    internal fun getChunksForSerial(): Set<Long> = this._chunks.map { it.chunk.chunkKey }.toSet()
 
     /**
      * For serial use only.
