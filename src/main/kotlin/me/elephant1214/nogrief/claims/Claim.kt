@@ -4,6 +4,8 @@ import kotlinx.serialization.Serializable
 import me.elephant1214.nogrief.claims.permissions.ClaimPermission
 import me.elephant1214.nogrief.players.PlayerManager
 import me.elephant1214.nogrief.utils.ClaimSerializer
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Chunk
 import org.bukkit.OfflinePlayer
@@ -15,7 +17,7 @@ import java.util.*
 @Serializable(ClaimSerializer::class)
 class Claim(
     val claimId: UUID = ClaimManager.newClaimID(),
-    var name: String,
+    var name: Component,
     ownerIn: UUID,
     val world: World,
     private val _chunks: MutableSet<ClaimChunk> = mutableSetOf(),
@@ -31,7 +33,7 @@ class Claim(
     var modified: Instant = modifiedIn
         private set
 
-    private constructor(name: String, owner: UUID, chunk: ClaimChunk) : this(
+    private constructor(name: Component, owner: UUID, chunk: ClaimChunk) : this(
         name = name,
         ownerIn = owner,
         world = chunk.world,
@@ -50,7 +52,7 @@ class Claim(
      * @return Whether [player] has [permission] in this claim.
      */
     private fun hasPermission(player: Player, permission: ClaimPermission): Boolean =
-        this.owner == player.uniqueId || PlayerManager.isBypassing(player) || this._permissions[player.uniqueId]?.contains(
+        this.owner == player.uniqueId || PlayerManager.inBypassClaimMode(player) || this._permissions[player.uniqueId]?.contains(
             permission
         ) ?: false
 
@@ -163,7 +165,11 @@ class Claim(
 
     companion object {
         fun createClaim(owner: Player, chunk: ClaimChunk): ClaimChunkAddResult {
-            val claim = Claim("${owner.displayName()}'s Claim", owner.uniqueId, chunk)
+            val claim = Claim(
+                owner.displayName().append(Component.text("'s Claim", NamedTextColor.AQUA)),
+                owner.uniqueId,
+                chunk
+            )
             val result = claim.addChunk(chunk)
             if (result == ClaimChunkAddResult.SUCCESS) {
                 ClaimManager.addClaim(claim)

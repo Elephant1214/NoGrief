@@ -10,7 +10,7 @@ data class ClaimChunk(
     val chunk: Long
 ) {
     constructor(chunk: Chunk) : this(chunk.world, chunk.chunkKey)
-    
+
     constructor(world: World, x: Int, y: Int) : this(world, Chunk.getChunkKey(x, y))
 
     fun isSameChunk(claimChunk: ClaimChunk): Boolean = this.world == claimChunk.world && this.chunk == claimChunk.chunk

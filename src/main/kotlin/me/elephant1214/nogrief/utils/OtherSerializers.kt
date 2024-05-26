@@ -3,10 +3,13 @@ package me.elephant1214.nogrief.utils
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import me.elephant1214.nogrief.NoGrief
 import me.elephant1214.nogrief.claims.permissions.ClaimPermission
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.World
 import java.time.Instant
@@ -67,5 +70,18 @@ object ClaimPermEnumSetSerializer : KSerializer<EnumSet<ClaimPermission>> {
     override fun deserialize(decoder: Decoder): EnumSet<ClaimPermission> {
         val permissions = decoder.decodeSerializableValue(ListSerializer(ClaimPermission.serializer()))
         return EnumSet.copyOf(permissions)
+    }
+}
+
+object ComponentSerializer : KSerializer<Component> {
+    override val descriptor = PrimitiveSerialDescriptor("component", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: Component) {
+        encoder.encodeString(NoGrief.MINI_MESSAGE.serialize(value))
+    }
+
+    override fun deserialize(decoder: Decoder): Component {
+        val component = decoder.decodeSerializableValue(String.serializer())
+        return NoGrief.MINI_MESSAGE.deserialize(component)
     }
 }

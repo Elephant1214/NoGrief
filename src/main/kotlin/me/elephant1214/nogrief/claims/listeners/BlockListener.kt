@@ -2,8 +2,9 @@ package me.elephant1214.nogrief.claims.listeners
 
 import me.elephant1214.nogrief.NoGrief
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.constants.sendNoPermission
+import me.elephant1214.nogrief.constants.sendCantDoThisHere
 import me.elephant1214.nogrief.constants.sendPistonMessage
+import net.minecraft.world.Container
 import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.TileState
@@ -27,7 +28,7 @@ object BlockListener : Listener {
         val isTile = event.block.state is TileState
         if (!claim.canBreak(event.player) || (isTile && !claim.hasTilePerm(event.player))) {
             event.isCancelled = true
-            event.player.sendNoPermission()
+            event.player.sendCantDoThisHere()
         }
     }
 
@@ -36,7 +37,7 @@ object BlockListener : Listener {
         val claim = ClaimManager.getClaim(event.block.chunk) ?: return
         if (claim.canBreak(event.player)) return
         event.isCancelled = true
-        event.player.sendNoPermission()
+        event.player.sendCantDoThisHere()
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
@@ -45,7 +46,7 @@ object BlockListener : Listener {
         val remover = event.remover
         if (remover is Player && (!claim.canBreak(remover) || !claim.hasEntitiesPerm(remover))) {
             event.isCancelled = true
-            remover.sendNoPermission()
+            remover.sendCantDoThisHere()
         }
     }
 
@@ -55,7 +56,7 @@ object BlockListener : Listener {
         val claim = ClaimManager.getClaim(event.clickedBlock!!.chunk) ?: return
         if (event.clickedBlock!!.type == Material.FARMLAND && !claim.canBreak(event.player)) {
             event.isCancelled = true
-            event.player.sendNoPermission()
+            event.player.sendCantDoThisHere()
         }
     }
 
@@ -69,20 +70,27 @@ object BlockListener : Listener {
             return
         }
         val isTile = event.block.state is TileState
-        if (!claim.canPlace(event.player) || (isTile && !claim.hasTilePerm(event.player))) {
+        val isContainer = event.block.state is Container
+        if (!claim.canPlace(event.player) || (isContainer && !claim.canAccessContainers(event.player)) || (isTile && !claim.hasTilePerm(event.player))) {
             event.isCancelled = true
-            event.player.sendNoPermission()
+            event.player.sendCantDoThisHere()
         }
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     fun onBlockMultiPlace(event: BlockMultiPlaceEvent) {
         event.replacedBlockStates.forEach { state ->
-            val claim = ClaimManager.getClaim(event.block.chunk) ?: return@forEach
+            val claim = ClaimManager.getClaim(event.block.chunk)
+            if (claim == null) {
+                if (event.blockPlaced.blockData is Piston) {
+                    event.player.sendPistonMessage()
+                }
+                return
+            }
             val isTile = state is TileState
             if (!claim.canPlace(event.player) || (isTile && !claim.hasTilePerm(event.player))) {
                 event.isCancelled = true
-                event.player.sendNoPermission()
+                event.player.sendCantDoThisHere()
             }
         }
     }
@@ -107,7 +115,7 @@ object BlockListener : Listener {
         }
 
         val claim = ClaimManager.getClaim(block.chunk) ?: return
-        if (placed && claim.canPlace(event.player)) return
+        if ((placed && claim.canPlace(event.player)) || (!placed && claim.canBreak(event.player))) return
 
         val usedItem = when (event.hand) {
             EquipmentSlot.HAND -> event.player.inventory.itemInMainHand
@@ -116,7 +124,7 @@ object BlockListener : Listener {
         }
         if (usedItem.type.name.uppercase().contains("BUCKET")) {
             event.isCancelled = true
-            event.player.sendNoPermission()
+            event.player.sendCantDoThisHere()
         }
     }
 
@@ -152,7 +160,7 @@ object BlockListener : Listener {
         if (event.ignitingEntity is Player) {
             val player = event.ignitingEntity as Player
             if (claim.hasFirePerm(player) && (event.block.type != Material.TNT || claim.hasExplosionPerm(player))) return
-            player.sendNoPermission()
+            player.sendCantDoThisHere()
         } else if (event.ignitingEntity is Arrow) {
             val arrow = event.ignitingEntity as Arrow
             val player = if (arrow.shooter is Player) {
@@ -171,6 +179,15 @@ object BlockListener : Listener {
             return
         }
         event.isCancelled = true
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    fun fluidUpdateEvent(event: BlockFromToEvent) {
+        if (!NoGrief.cfg.fluidsFlowIntoClaims) {
+            val claim = ClaimManager.getClaim(event.toBlock.chunk) ?: return
+            if (claim == ClaimManager.getClaim(event.block.chunk)) return
+            event.isCancelled = true
+        }
     }
 }
 

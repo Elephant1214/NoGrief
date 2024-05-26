@@ -14,6 +14,9 @@ object ClaimManager {
         NoGrief.dataDir.resolve("claims").apply { if (!this@apply.exists()) this@apply.createDirectories() }
 
     private val _claims = mutableSetOf<Claim>()
+    val ADMIN_CLAIM_OWNER: UUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
+
+    fun newClaimID(): UUID = UUID.randomUUID()
 
     fun getClaim(chunk: ClaimChunk): Claim? = this._claims.find { it.containsChunk(chunk) }
 
@@ -26,7 +29,7 @@ object ClaimManager {
         PlayerManager.getPlayer(claim.getPlayerOwner()).remainingClaimChunks += claim.chunkCount()
         this.claimsDir.resolve("${claim.claimId}.json").deleteIfExists()
     }
-    
+
     internal fun saveClaims() {
         try {
             this._claims.forEach { claim ->
@@ -37,7 +40,7 @@ object ClaimManager {
             NoGrief.logger.severe("Failed to save claim: ${e.stackTrace}")
         }
     }
-    
+
     private fun getClaimPath(uuid: UUID): Path = this.claimsDir.resolve("$uuid.json").apply {
         if (!this.exists()) this.createFile()
     }
@@ -49,9 +52,8 @@ object ClaimManager {
                 .map { NoGrief.JSON.decodeFromStream<Claim>(it.inputStream()) }
                 .forEach { this.addClaim(it) }
         } catch (e: Exception) {
-            NoGrief.logger.severe("Failed to load claims: ${e.message}")
+            NoGrief.logger.severe("Failed to load claims:")
+            e.printStackTrace()
         }
     }
-
-    fun newClaimID(): UUID = UUID.randomUUID()
 }

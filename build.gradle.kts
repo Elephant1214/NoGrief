@@ -57,8 +57,8 @@ tasks {
     withType<KotlinCompile>().configureEach {
         kotlinOptions {
             jvmTarget = "21"
-            freeCompilerArgs += "-Xopt-in=kotlin.io.path.ExperimentalPathApi"
-            freeCompilerArgs += "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
+            freeCompilerArgs += "-opt-in=kotlin.io.path.ExperimentalPathApi"
+            freeCompilerArgs += "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
         }
     }
     javadoc {

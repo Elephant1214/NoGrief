@@ -20,7 +20,9 @@ import me.elephant1214.nogrief.commands.AdminCommands
 import me.elephant1214.nogrief.commands.ClaimCommands
 import me.elephant1214.nogrief.configuration.NoGriefConfig
 import me.elephant1214.nogrief.listeners.DataListener
+import me.elephant1214.nogrief.locale.LocaleManager
 import me.elephant1214.nogrief.players.PlayerManager
+import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
 import java.nio.file.Path
@@ -30,11 +32,13 @@ object NoGrief : JavaPlugin() {
     internal val JSON = Json {
         encodeDefaults = true
     }
-    private val PRETTY_JSON = Json {
+    internal val PRETTY_JSON = Json {
         encodeDefaults = true
         prettyPrint = true
     }
-    val dataDir: Path = this.dataFolder.toPath().apply { 
+    internal val MINI_MESSAGE = MiniMessage.miniMessage()
+
+    val dataDir: Path = this.dataFolder.toPath().apply {
         if (!this@apply.exists()) this@apply.createDirectories()
     }
     private val cfgFile = dataDir.resolve("config.json").apply {
@@ -45,22 +49,10 @@ object NoGrief : JavaPlugin() {
     private lateinit var annotationParser: AnnotationParser<CommandSender>
     var cfg: NoGriefConfig
         private set
-    
+
     init {
         this.cfg = loadCfg()
         this.saveCfg()
-    }
-
-    override fun onEnable() {
-        this.setupCommandManager()
-        this.registerCommands()
-        
-        ClaimManager.loadClaims()
-        this.registerListeners()
-    }
-
-    override fun onDisable() {
-        this.fullSave()
     }
 
     private fun loadCfg(): NoGriefConfig = try {
@@ -75,6 +67,19 @@ object NoGrief : JavaPlugin() {
 
     fun saveCfg() {
         PRETTY_JSON.encodeToStream(this.cfg, this.cfgFile.outputStream())
+    }
+
+    override fun onEnable() {
+        LocaleManager.loadMessages()
+        this.setupCommandManager()
+        this.registerCommands()
+
+        ClaimManager.loadClaims()
+        this.registerListeners()
+    }
+
+    override fun onDisable() {
+        this.fullSave()
     }
 
     private fun registerListeners() {

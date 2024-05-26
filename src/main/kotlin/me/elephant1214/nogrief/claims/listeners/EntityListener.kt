@@ -1,7 +1,8 @@
 package me.elephant1214.nogrief.claims.listeners
 
+import me.elephant1214.nogrief.NoGrief
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.constants.sendNoPermission
+import me.elephant1214.nogrief.constants.sendCantDoThisHere
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal
 import org.bukkit.entity.Enemy
 import org.bukkit.entity.Player
@@ -22,14 +23,15 @@ object EntityListener : Listener {
         }
 
         player.let {
-            val claim = ClaimManager.getClaim(event.entity.chunk)
-            if (claim != null && event.entity is Player && !claim.containsChunk(player.chunk) && !claim.hasEntitiesPerm(player)) {
+            val claim = ClaimManager.getClaim(event.entity.chunk) ?: return
+            if (event.entity is Enemy) return@onEntityDamageEntity
+            if (event.entity is Player && !NoGrief.cfg.allowPvPInClaims) {
                 event.isCancelled = true
-                player.sendNoPermission()
+                player.sendCantDoThisHere()
+                return
+            } else if (NoGrief.cfg.allowPvPInClaims) {
                 return
             }
-            if (claim == null) return
-            if (event.entity is Enemy) return@onEntityDamageEntity
 
             val hasEntitiesPerm = claim.hasEntitiesPerm(player)
             val isEndCrystal = event.entity is EndCrystal
@@ -37,7 +39,7 @@ object EntityListener : Listener {
 
             if (!hasEntitiesPerm || (isEndCrystal && hasOtherCrystalPerms)) {
                 event.isCancelled = true
-                player.sendNoPermission()
+                player.sendCantDoThisHere()
             }
         }
     }
@@ -47,6 +49,6 @@ object EntityListener : Listener {
         val claim = ClaimManager.getClaim(event.rightClicked.chunk) ?: return
         if (claim.hasEntitiesPerm(event.player)) return
         event.isCancelled = true
-        event.player.sendNoPermission()
+        event.player.sendCantDoThisHere()
     }
 }

@@ -4,13 +4,21 @@ import cloud.commandframework.annotations.Argument
 import cloud.commandframework.annotations.CommandDescription
 import cloud.commandframework.annotations.CommandMethod
 import me.elephant1214.ccfutils.annotations.BetterCmdPerm
+import me.elephant1214.nogrief.NoGrief
 import me.elephant1214.nogrief.claims.Claim
 import me.elephant1214.nogrief.claims.ClaimChunk
 import me.elephant1214.nogrief.claims.ClaimChunkAddResult
 import me.elephant1214.nogrief.claims.ClaimManager
 import me.elephant1214.nogrief.claims.permissions.ClaimPermission
-import me.elephant1214.nogrief.constants.*
+import me.elephant1214.nogrief.constants.CLAIM
+import me.elephant1214.nogrief.constants.sendNoPermission
+import me.elephant1214.nogrief.constants.sendNotInAClaim
+import me.elephant1214.nogrief.constants.toMsgComp
+import me.elephant1214.nogrief.locale.LocaleManager
 import me.elephant1214.nogrief.players.PlayerManager
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.permissions.PermissionDefault
 import java.util.*
@@ -26,8 +34,13 @@ object ClaimCommands {
         if (!hasClaimChunks(sender)) return
 
         when (Claim.createClaim(sender, ClaimChunk(sender.chunk))) {
-            ClaimChunkAddResult.SUCCESS -> sender.sendMessage(CREATED_CLAIM)
-            ClaimChunkAddResult.FAILED_CHUNK_ALREADY_CLAIMED -> sender.sendMessage(ALREADY_CLAIMED)
+            ClaimChunkAddResult.SUCCESS -> sender.sendMessage(
+                LocaleManager.get(
+                    "claim.created", Placeholder.component("chunk", sender.chunk.toMsgComp())
+                )
+            )
+
+            ClaimChunkAddResult.FAILED_CHUNK_ALREADY_CLAIMED -> sender.sendMessage(LocaleManager.get("chunk.alreadyClaimed"))
             ClaimChunkAddResult.FAILED_WRONG_WORLD -> error("Impossible state")
         }
     }
@@ -40,17 +53,17 @@ object ClaimCommands {
     ) {
         val claim = ClaimManager.getClaim(sender.chunk)
         if (claim == null) {
-            sender.sendMessage(NOT_IN_CLAIM)
+            sender.sendNotInAClaim()
             return
         }
-        
+
         if (!claim.isOwner(sender)) {
-            sender.sendMessage(NO_PERMISSION)
+            sender.sendNoPermission()
             return
         }
-        
+
         ClaimManager.deleteClaim(claim)
-        sender.sendMessage(DELETE_CLAIM)
+        sender.sendMessage(LocaleManager.get("claim.deleted", Placeholder.component("claim", claim.name)))
     }
 
     @CommandMethod("claim")
@@ -61,23 +74,27 @@ object ClaimCommands {
     ) {
         val currentClaim = ClaimManager.getClaim(sender.chunk)
         if (currentClaim != null) {
-            sender.sendMessage(ALREADY_CLAIMED)
+            sender.sendMessage(LocaleManager.get("chunk.alreadyClaimed"))
             return
         }
-        
+
         val chunk = findClaim(sender)
         if (chunk == null) {
-            sender.sendMessage(NO_CONNECTING_CLAIM)
+            sender.sendMessage(LocaleManager.get("chunk.noConnectingClaim"))
             return
         }
-        
+
         val claim = ClaimManager.getClaim(chunk)!!
         if (sender.uniqueId != claim.owner) {
-            sender.sendMessage(NO_PERMISSION)
+            sender.sendNoPermission()
             return
         }
         claim.addChunk(ClaimChunk(sender.chunk))
-        sender.sendChunkClaimed(sender.chunk)
+        sender.sendMessage(
+            LocaleManager.get(
+                "chunk.claimed", Placeholder.component("chunk", sender.chunk.toMsgComp())
+            )
+        )
     }
 
     @CommandMethod("unclaim")
@@ -88,21 +105,25 @@ object ClaimCommands {
     ) {
         val claim = ClaimManager.getClaim(sender.chunk)
         if (claim == null) {
-            sender.sendMessage(NOT_IN_CLAIM)
+            sender.sendNotInAClaim()
             return
         }
 
         if (sender.uniqueId != claim.owner) {
-            sender.sendMessage(NO_PERMISSION)
+            sender.sendNoPermission()
             return
         }
 
         claim.removeChunk(ClaimChunk(sender.chunk))
-        sender.sendMessage(REMOVE_CHUNK)
-        
+        sender.sendMessage(
+            LocaleManager.get(
+                "chunk.removed", Placeholder.component("chunk", sender.chunk.toMsgComp())
+            )
+        )
+
         if (claim.chunkCount() <= 0) {
             ClaimManager.deleteClaim(claim)
-            sender.sendMessage(DELETE_CLAIM_NO_CHUNKS)
+            sender.sendMessage(LocaleManager.get("claim.deleted.noChunks"))
         }
     }
 
@@ -121,7 +142,15 @@ object ClaimCommands {
     fun claimChunks(
         sender: Player,
     ) {
-        sender.sendClaimChunkCount()
+        sender.sendMessage(
+            LocaleManager.get(
+                "player.remainingChunks", Placeholder.component(
+                    "remaining", Component.text(PlayerManager.getPlayer(sender).remainingClaimChunks.toString())
+                ), Placeholder.component(
+                    "total", Component.text(PlayerManager.getPlayer(sender).totalClaimChunks.toString())
+                )
+            )
+        )
     }
 
     @CommandMethod("claim permission <target> <permission> <state>")
@@ -135,20 +164,15 @@ object ClaimCommands {
     ) {
         val claim = ClaimManager.getClaim(sender.chunk)
         if (claim == null) {
-            sender.sendMessage(NOT_IN_CLAIM)
+            sender.sendNotInAClaim()
             return
         }
-        
-        if (!claim.canManageClaim(sender)) {
-            sender.sendMessage(NO_PERMISSION)
+
+        if (!claim.canManageClaim(sender) || (claim.canManageClaim(target) && !claim.isOwner(sender))) {
+            sender.sendNoPermission()
             return
         }
-        
-        if (claim.canManageClaim(target) && !claim.isOwner(sender)) {
-            sender.sendMessage(NO_PERMISSION)
-            return
-        }
-        
+
         if (permission == ClaimPermission.MANAGE) {
             if (state) {
                 claim.setPermissions(target, EnumSet.allOf(ClaimPermission::class.java), true)
@@ -158,8 +182,14 @@ object ClaimCommands {
         } else {
             claim.setPermission(target, permission, state)
         }
-        
-        sender.sendPermissionsUpdated(permission, target)
+
+        sender.sendMessage(
+            LocaleManager.get(
+                "claim.permissions.updated",
+                Placeholder.component("permission", Component.text(permission.toString().replace('_', ' '))),
+                Placeholder.component("player", target.displayName())
+            )
+        )
     }
 
     @CommandMethod("claim transfer <target>")
@@ -171,45 +201,72 @@ object ClaimCommands {
     ) {
         val claim = ClaimManager.getClaim(sender.chunk)
         if (claim == null) {
-            sender.sendMessage(NOT_IN_CLAIM)
+            sender.sendMessage(LocaleManager.get("claim.noClaim"))
             return
         }
 
         if (sender.uniqueId != claim.owner) {
-            sender.sendMessage(NO_PERMISSION)
+            sender.sendNoPermission()
             return
         }
-        
+
+        if (PlayerManager.getPlayer(Bukkit.getOfflinePlayer(target.uniqueId)).remainingClaimChunks < claim.chunkCount()) {
+            sender.sendMessage(
+                LocaleManager.get(
+                    "claim.transfer.notEnoughChunks", Placeholder.component("player", target.displayName())
+                )
+            )
+            return
+        }
+
+        PlayerManager.getPlayer(claim.getPlayerOwner()).remainingClaimChunks += claim.chunkCount()
         claim.owner = target.uniqueId
-        sender.sendTransferredOwnership(claim.name, target)
-        target.sendNewOwner(claim.name)
+        PlayerManager.getPlayer(Bukkit.getOfflinePlayer(target.uniqueId)).remainingClaimChunks -= claim.chunkCount()
+        sender.sendMessage(
+            LocaleManager.get(
+                "claim.transfer.success",
+                Placeholder.component("claim", claim.name),
+                Placeholder.component("player", target.displayName())
+            )
+        )
+        target.sendMessage(
+            LocaleManager.get(
+                "claim.transfer.newOwner", Placeholder.component("claim", target.displayName())
+            )
+        )
     }
 
     @CommandMethod("claim rename <name>")
     @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
     @CommandDescription("Renames the current claim.")
-    fun setOwner(
+    fun rename(
         sender: Player,
-        @Argument("name") name: String,
+        @Argument("name") nameIn: String,
     ) {
         val claim = ClaimManager.getClaim(sender.chunk)
         if (claim == null) {
-            sender.sendMessage(NOT_IN_CLAIM)
+            sender.sendNotInAClaim()
             return
         }
 
         if (sender.uniqueId != claim.owner) {
-            sender.sendMessage(NO_PERMISSION)
+            sender.sendNoPermission()
             return
         }
+
+        val name = NoGrief.MINI_MESSAGE.deserialize(nameIn)
         val oldName = claim.name
-        sender.sendRenamed(oldName, name)
+        sender.sendMessage(
+            LocaleManager.get(
+                "claim.renamed", Placeholder.component("old", oldName), Placeholder.component("new", name)
+            )
+        )
         claim.name = name
     }
 
     private fun hasClaimChunks(player: Player): Boolean {
         if (!PlayerManager.getPlayer(player).hasClaimChunks()) {
-            player.sendMessage(NOT_ENOUGH_CLAIM_CHUNKS)
+            player.sendMessage(LocaleManager.get("player.notEnoughClaimChunks"))
             return false
         }
         return true
@@ -221,14 +278,14 @@ object ClaimCommands {
     private fun findClaim(player: Player): ClaimChunk? {
         val currentChunk = player.chunk
         val surrounding = mutableListOf(ClaimChunk(currentChunk))
-        
+
         val directions = listOf(
             Pair(0, -1),
             Pair(0, 1),
             Pair(-1, 0),
             Pair(1, 0),
         )
-        
+
         for ((x, z) in directions) {
             val chunk = ClaimChunk(currentChunk.world, currentChunk.x + x, currentChunk.z + z)
             surrounding.add(chunk)

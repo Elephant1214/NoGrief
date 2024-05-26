@@ -1,11 +1,8 @@
 package me.elephant1214.nogrief.claims.listeners
 
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.constants.sendNoPermission
-import org.bukkit.entity.Creeper
-import org.bukkit.entity.Entity
-import org.bukkit.entity.Player
-import org.bukkit.entity.TNTPrimed
+import me.elephant1214.nogrief.constants.sendCantDoThisHere
+import org.bukkit.entity.*
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -14,25 +11,33 @@ import org.bukkit.event.entity.EntityExplodeEvent
 object ExplosionListener : Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     fun onEntityExplode(event: EntityExplodeEvent) {
-        lateinit var causingEntity: Entity
-        
-        if (event.entity is Creeper) {
-            val target = (event.entity as Creeper).target ?: return
-            if (target !is Player) return
-        } else if (event.entity is TNTPrimed) {
-            causingEntity = (event.entity as TNTPrimed).source ?: return
-            while (causingEntity is TNTPrimed && causingEntity.source != null) {
-                causingEntity = causingEntity.source!!
+        var causingEntity: Entity? = null
+
+        when (event.entity) {
+            is Creeper -> {
+                causingEntity = (event.entity as Creeper).target ?: return
             }
-            if (causingEntity !is Player) return
+
+            is TNTPrimed -> {
+                causingEntity = (event.entity as TNTPrimed).source ?: return
+                while (causingEntity is TNTPrimed && causingEntity.source != null) {
+                    causingEntity = causingEntity.source!!
+                }
+            }
+
+            is Fireball -> {
+                causingEntity = ((event.entity as Fireball).shooter as Ghast).target
+            }
         }
-        
+
         if (causingEntity is Player) {
             event.blockList().forEach { block ->
                 val claim = ClaimManager.getClaim(block.chunk)
                 if (claim != null && !claim.hasExplosionPerm(causingEntity)) {
                     event.isCancelled = true
-                    causingEntity.sendNoPermission()
+                    if (event.entity !is Creeper || event.entity !is Fireball) {
+                        causingEntity.sendCantDoThisHere()
+                    }
                     return@onEntityExplode
                 }
             }

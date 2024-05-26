@@ -16,6 +16,7 @@ import kotlinx.serialization.encoding.Encoder
 import me.elephant1214.nogrief.claims.Claim
 import me.elephant1214.nogrief.claims.ClaimChunk
 import me.elephant1214.nogrief.claims.permissions.ClaimPermission
+import net.kyori.adventure.text.Component
 import org.bukkit.World
 import java.time.Instant
 import java.util.*
@@ -31,7 +32,7 @@ object ClaimSerializer : KSerializer<Claim> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("claim") {
         element<@Serializable(UUIDSerializer::class) UUID>("id")
-        element<String>("name")
+        element<Component>("name")
         element<@Serializable(UUIDSerializer::class) UUID>("owner")
         element<@Serializable(WorldSerializer::class) World>("world")
         element<Set<Long>>("chunks")
@@ -44,7 +45,7 @@ object ClaimSerializer : KSerializer<Claim> {
     override fun serialize(encoder: Encoder, value: Claim) {
         val composite = encoder.beginStructure(descriptor)
         composite.encodeUUID(ID_INDEX, value.claimId)
-        composite.encodeStringElement(descriptor, NAME_INDEX, value.name)
+        composite.encodeSerializableElement(descriptor, NAME_INDEX, ComponentSerializer, value.name)
         composite.encodeUUID(OWNER_INDEX, value.owner)
         composite.encodeSerializableElement(descriptor, WORLD_INDEX, WorldSerializer, value.world)
         composite.encodeSerializableElement(
@@ -62,7 +63,7 @@ object ClaimSerializer : KSerializer<Claim> {
 
     override fun deserialize(decoder: Decoder): Claim {
         lateinit var claimId: UUID
-        lateinit var name: String
+        lateinit var name: Component
         lateinit var owner: UUID
         lateinit var world: World
         lateinit var chunks: Set<Long>
@@ -74,7 +75,7 @@ object ClaimSerializer : KSerializer<Claim> {
             when (val index = composite.decodeElementIndex(descriptor)) {
                 CompositeDecoder.DECODE_DONE -> break@loop
                 ID_INDEX -> claimId = composite.decodeUUID(index)
-                NAME_INDEX -> name = composite.decodeStringElement(descriptor, NAME_INDEX)
+                NAME_INDEX -> name = composite.decodeSerializableElement(descriptor, NAME_INDEX, ComponentSerializer)
                 OWNER_INDEX -> owner = composite.decodeUUID(index)
                 WORLD_INDEX -> world = composite.decodeSerializableElement(descriptor, index, WorldSerializer)
                 CHUNKS_INDEX -> chunks =
@@ -90,7 +91,15 @@ object ClaimSerializer : KSerializer<Claim> {
         }
         composite.endStructure(descriptor)
 
-        return Claim(claimId, name, owner, world, ClaimChunk.fromLongSet(world, chunks), permissions.toMutableMap(), modified)
+        return Claim(
+            claimId,
+            name,
+            owner,
+            world,
+            ClaimChunk.fromLongSet(world, chunks),
+            permissions.toMutableMap(),
+            modified
+        )
     }
 
     private fun CompositeEncoder.encodeUUID(index: Int, value: UUID) =
