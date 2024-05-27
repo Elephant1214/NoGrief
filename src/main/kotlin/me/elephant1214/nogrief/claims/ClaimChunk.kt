@@ -13,7 +13,9 @@ data class ClaimChunk(
 
     constructor(world: World, x: Int, y: Int) : this(world, world.getChunkAt(x, y))
 
-    fun getChunkKey(): Long = this.chunk.chunkKey
+    fun x(): Int = this.chunk.x
+    
+    fun z(): Int = this.chunk.z
 
     override fun toString(): String = "ClaimChunk(world = $world, chunk = $chunk)"
 

@@ -47,8 +47,11 @@ class SquaremapTask private constructor(
     }
     
     private fun options(claim: Claim): MarkerOptions.Builder {
-        val player = claim.getPlayerOwner()
-        val ownerName = if (player.name == null) "Unknown" else player.name
+        val ownerName = if (claim.owner == ClaimManager.ADMIN_CLAIM_OWNER) {
+            "Admin"
+        } else {
+            claim.getPlayerOwner().name ?: "Unknown"
+        }
         return MarkerOptions.builder()
             .strokeColor(Color.CYAN)
             .strokeWeight(2)

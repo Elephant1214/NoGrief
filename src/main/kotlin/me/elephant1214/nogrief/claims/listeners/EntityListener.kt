@@ -1,5 +1,6 @@
 package me.elephant1214.nogrief.claims.listeners
 
+import me.elephant1214.nogrief.NoGrief
 import me.elephant1214.nogrief.claims.ClaimManager
 import me.elephant1214.nogrief.constants.sendCantDoThisHere
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal
@@ -25,11 +26,17 @@ object EntityListener : Listener {
         player.let {
             val claim = ClaimManager.getClaim(event.entity.chunk)
             val attackerClaim = ClaimManager.getClaim(player.chunk)
-            if (claim == null && attackerClaim == null) return@onEntityDamageEntity
+            if (claim == null && attackerClaim == null) {
+                if (!NoGrief.cfg.allowPvpOutsideClaims) {
+                    event.isCancelled = true
+                    player.sendCantDoThisHere()
+                }
+                return@onEntityDamageEntity
+            }
             
             if (claim != null) {
                 val hasEntitiesPerm = claim.hasEntitiesPerm(player)
-                if (event.entity is Player && hasEntitiesPerm && claim == attackerClaim) return@onEntityDamageEntity
+                if (NoGrief.cfg.allowPvpInClaims && event.entity is Player) return@onEntityDamageEntity
                 val isEndCrystal = event.entity is EndCrystal
                 val hasOtherCrystalPerms = claim.canBreak(player) && claim.hasExplosionPerm(player)
                 if (hasEntitiesPerm && isEndCrystal && hasOtherCrystalPerms) return@onEntityDamageEntity

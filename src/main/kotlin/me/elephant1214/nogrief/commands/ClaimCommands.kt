@@ -3,6 +3,7 @@ package me.elephant1214.nogrief.commands
 import cloud.commandframework.annotations.Argument
 import cloud.commandframework.annotations.CommandDescription
 import cloud.commandframework.annotations.CommandMethod
+import cloud.commandframework.annotations.specifier.Greedy
 import me.elephant1214.ccfutils.annotations.BetterCmdPerm
 import me.elephant1214.nogrief.NoGrief
 import me.elephant1214.nogrief.claims.Claim
@@ -72,6 +73,8 @@ object ClaimCommands {
     fun claimChunk(
         sender: Player,
     ) {
+        if (!hasClaimChunks(sender)) return
+        
         val currentClaim = ClaimManager.getClaim(sender.chunk)
         if (currentClaim != null) {
             sender.sendMessage(LocaleManager.get("chunk.alreadyClaimed"))
@@ -236,12 +239,12 @@ object ClaimCommands {
         )
     }
 
-    @CommandMethod("claim rename <name>")
+    @CommandMethod("claim rename <new>")
     @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
     @CommandDescription("Renames the current claim.")
     fun rename(
         sender: Player,
-        @Argument("name") nameIn: String,
+        @Greedy @Argument("new") new: String,
     ) {
         val claim = ClaimManager.getClaim(sender.chunk)
         if (claim == null) {
@@ -254,7 +257,7 @@ object ClaimCommands {
             return
         }
 
-        val name = NoGrief.MINI_MESSAGE.deserialize(nameIn)
+        val name = NoGrief.MINI_MESSAGE.deserialize(new)
         val oldName = claim.name
         sender.sendMessage(
             LocaleManager.get(

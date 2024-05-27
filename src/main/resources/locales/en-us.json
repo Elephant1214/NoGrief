@@ -4,6 +4,7 @@
     "admin.localeChanged": "<aqua>Changed the locale to <new>",
     "admin.reload.all": "<aqua>Reloaded all configs",
     "admin.reload.specific": "<aqua>Reloaded <config>",
+    "cantDoThisHere": "You don't have permission to do this here!",
     "chunk.alreadyClaimed": "<red>This chunk is already claimed!",
     "chunk.claimed": "<green>The chunk at <chunk> was claimed!",
     "chunk.noConnectingClaim": "<red>No connecting claim that you own was found!",

@@ -7,7 +7,6 @@ import me.elephant1214.nogrief.utils.ClaimSerializer
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
-import org.bukkit.Chunk
 import org.bukkit.OfflinePlayer
 import org.bukkit.World
 import org.bukkit.entity.Player
@@ -122,11 +121,6 @@ class Claim(
      * @return Whether this claim contains the chunk [chunk].
      */
     fun containsChunk(chunk: ClaimChunk): Boolean = chunk in this._chunks
-
-    /**
-     * Does the same as [containsChunk], but converts a [Chunk] to a [ClaimChunk] first.
-     */
-    fun containsChunk(chunk: Chunk): Boolean = this.containsChunk(ClaimChunk(chunk.world, chunk))
 
     /**
      * Adds a chunk to this claim.
