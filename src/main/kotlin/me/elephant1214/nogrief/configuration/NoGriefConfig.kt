@@ -7,7 +7,7 @@ import me.elephant1214.nogrief.locale.Locale
 data class NoGriefConfig(
     var locale: Locale = Locale.EN_US,
     var allowPistonsOutsideClaims: Boolean = false,
-    var allowPvpInClaims: Boolean = false,
+    var allowPvpInClaims: Boolean = true,
     var allowPvpOutsideClaims: Boolean = true,
     var fluidsFlowIntoClaims: Boolean = false,
     var initialClaimChunks: Int = 16,

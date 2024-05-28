@@ -35,9 +35,7 @@ object ExplosionListener : Listener {
                 val claim = ClaimManager.getClaim(block.chunk)
                 if (claim != null && !claim.hasExplosionPerm(causingEntity)) {
                     event.isCancelled = true
-                    if (event.entity !is Creeper || event.entity !is Fireball) {
-                        causingEntity.sendCantDoThisHere()
-                    }
+                    causingEntity.sendCantDoThisHere()
                     return@onEntityExplode
                 }
             }

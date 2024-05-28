@@ -16,13 +16,12 @@ import me.elephant1214.nogrief.claims.listeners.BlockListener
 import me.elephant1214.nogrief.claims.listeners.EntityListener
 import me.elephant1214.nogrief.claims.listeners.ExplosionListener
 import me.elephant1214.nogrief.claims.listeners.InteractListener
-import me.elephant1214.nogrief.commands.AdminCommands
-import me.elephant1214.nogrief.commands.ClaimCommands
+import me.elephant1214.nogrief.commands.*
 import me.elephant1214.nogrief.configuration.NoGriefConfig
 import me.elephant1214.nogrief.listeners.DataListener
 import me.elephant1214.nogrief.locale.LocaleManager
 import me.elephant1214.nogrief.players.PlayerManager
-import me.elephant1214.nogrief.squaremap.hook.SquaremapHook
+import me.elephant1214.nogrief.hooks.squaremap.hook.SquaremapHook
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
@@ -133,8 +132,11 @@ object NoGrief : JavaPlugin() {
             CCFUtils.registerAnnotations(annotationParser)
 
             // Annotation commands
-            annotationParser.parse(ClaimCommands)
             annotationParser.parse(AdminCommands)
+            annotationParser.parse(ChunksCommands)
+            annotationParser.parse(ClaimCommands)
+            annotationParser.parse(ClaimInfoCommands)
+            annotationParser.parse(ClaimManagementCommands)
         }
     }
 

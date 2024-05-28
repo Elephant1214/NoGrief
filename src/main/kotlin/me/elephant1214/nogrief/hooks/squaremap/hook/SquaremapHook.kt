@@ -1,7 +1,7 @@
-package me.elephant1214.nogrief.squaremap.hook
+package me.elephant1214.nogrief.hooks.squaremap.hook
 
 import me.elephant1214.nogrief.NoGrief
-import me.elephant1214.nogrief.squaremap.task.SquaremapTask
+import me.elephant1214.nogrief.hooks.squaremap.task.SquaremapTask
 import xyz.jpenilla.squaremap.api.Key.key
 import xyz.jpenilla.squaremap.api.SimpleLayerProvider
 import xyz.jpenilla.squaremap.api.SquaremapProvider
@@ -20,12 +20,12 @@ object SquaremapHook {
             val task = SquaremapTask(world, provider)
             task.runTaskTimerAsynchronously(NoGrief, 20L, 20L * 300)
 
-            this._tasks[world.identifier()] = task
+            _tasks[world.identifier()] = task
         }
     }
     
     fun disable() {
-        this._tasks.values.forEach(SquaremapTask::disable)
-        this._tasks.clear()
+        _tasks.values.forEach(SquaremapTask::disable)
+        _tasks.clear()
     }
 }

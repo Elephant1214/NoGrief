@@ -4,6 +4,7 @@ import me.elephant1214.nogrief.NoGrief
 import me.elephant1214.nogrief.claims.ClaimManager
 import me.elephant1214.nogrief.constants.sendCantDoThisHere
 import me.elephant1214.nogrief.constants.sendPistonMessage
+import me.elephant1214.nogrief.utils.cancelInteractEvent
 import net.minecraft.world.Container
 import org.bukkit.Material
 import org.bukkit.block.Block
@@ -55,8 +56,7 @@ object BlockListener : Listener {
         if (event.action != Action.PHYSICAL || event.clickedBlock == null) return
         val claim = ClaimManager.getClaim(event.clickedBlock!!.chunk) ?: return
         if (event.clickedBlock!!.type == Material.FARMLAND && !claim.canBreak(event.player)) {
-            event.isCancelled = true
-            event.player.sendCantDoThisHere()
+            event.cancelInteractEvent()
         }
     }
 
@@ -123,8 +123,7 @@ object BlockListener : Listener {
             else -> return
         }
         if (usedItem.type.name.uppercase().contains("BUCKET")) {
-            event.isCancelled = true
-            event.player.sendCantDoThisHere()
+            event.cancelInteractEvent()
         }
     }
 

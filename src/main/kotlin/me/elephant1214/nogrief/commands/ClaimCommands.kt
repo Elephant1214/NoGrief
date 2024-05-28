@@ -1,28 +1,21 @@
 package me.elephant1214.nogrief.commands
 
-import cloud.commandframework.annotations.Argument
 import cloud.commandframework.annotations.CommandDescription
 import cloud.commandframework.annotations.CommandMethod
-import cloud.commandframework.annotations.specifier.Greedy
 import me.elephant1214.ccfutils.annotations.BetterCmdPerm
-import me.elephant1214.nogrief.NoGrief
 import me.elephant1214.nogrief.claims.Claim
 import me.elephant1214.nogrief.claims.ClaimChunk
 import me.elephant1214.nogrief.claims.ClaimChunkAddResult
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.claims.permissions.ClaimPermission
 import me.elephant1214.nogrief.constants.CLAIM
 import me.elephant1214.nogrief.constants.sendNoPermission
 import me.elephant1214.nogrief.constants.sendNotInAClaim
 import me.elephant1214.nogrief.constants.toMsgComp
 import me.elephant1214.nogrief.locale.LocaleManager
-import me.elephant1214.nogrief.players.PlayerManager
-import net.kyori.adventure.text.Component
+import me.elephant1214.nogrief.utils.hasClaimChunks
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
-import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.permissions.PermissionDefault
-import java.util.*
 
 @Suppress("unused")
 object ClaimCommands {
@@ -32,7 +25,7 @@ object ClaimCommands {
     fun createClaim(
         sender: Player,
     ) {
-        if (!hasClaimChunks(sender)) return
+        if (!sender.hasClaimChunks()) return
 
         when (Claim.createClaim(sender, ClaimChunk(sender.chunk))) {
             ClaimChunkAddResult.SUCCESS -> sender.sendMessage(
@@ -69,11 +62,11 @@ object ClaimCommands {
 
     @CommandMethod("claim")
     @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
-    @CommandDescription("Looks for a connected surrounding claim you manage, then adds the chunk to the claim.")
+    @CommandDescription("Adds the chunk to the claim.")
     fun claimChunk(
         sender: Player,
     ) {
-        if (!hasClaimChunks(sender)) return
+        if (!sender.hasClaimChunks()) return
         
         val currentClaim = ClaimManager.getClaim(sender.chunk)
         if (currentClaim != null) {
@@ -138,142 +131,6 @@ object ClaimCommands {
     // ) {
     //     if (!hasClaimChunks(sender)) return
     // }
-
-    @CommandMethod("claimchunks")
-    @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
-    @CommandDescription("Shows your current claim chunk count.")
-    fun claimChunks(
-        sender: Player,
-    ) {
-        sender.sendMessage(
-            LocaleManager.get(
-                "player.remainingChunks", Placeholder.component(
-                    "remaining", Component.text(PlayerManager.getPlayer(sender).remainingClaimChunks.toString())
-                ), Placeholder.component(
-                    "total", Component.text(PlayerManager.getPlayer(sender).totalClaimChunks.toString())
-                )
-            )
-        )
-    }
-
-    @CommandMethod("claim permission <target> <permission> <state>")
-    @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
-    @CommandDescription("Changes a permission for the specified player in your current claim. Giving a player manage gives them ALL permissions.")
-    fun setPermission(
-        sender: Player,
-        @Argument("target") target: Player,
-        @Argument("permission") permission: ClaimPermission,
-        @Argument("state") state: Boolean,
-    ) {
-        val claim = ClaimManager.getClaim(sender.chunk)
-        if (claim == null) {
-            sender.sendNotInAClaim()
-            return
-        }
-
-        if (!claim.canManageClaim(sender) || (claim.canManageClaim(target) && !claim.isOwner(sender))) {
-            sender.sendNoPermission()
-            return
-        }
-
-        if (permission == ClaimPermission.MANAGE) {
-            if (state) {
-                claim.setPermissions(target, EnumSet.allOf(ClaimPermission::class.java), true)
-            } else {
-                claim.setPermission(target, ClaimPermission.MANAGE, false)
-            }
-        } else {
-            claim.setPermission(target, permission, state)
-        }
-
-        sender.sendMessage(
-            LocaleManager.get(
-                "claim.permissions.updated",
-                Placeholder.component("permission", Component.text(permission.toString().replace('_', ' '))),
-                Placeholder.component("player", target.displayName())
-            )
-        )
-    }
-
-    @CommandMethod("claim transfer <target>")
-    @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
-    @CommandDescription("Transfers ownership of the current claim to the target.")
-    fun transfer(
-        sender: Player,
-        @Argument("target") target: Player,
-    ) {
-        val claim = ClaimManager.getClaim(sender.chunk)
-        if (claim == null) {
-            sender.sendMessage(LocaleManager.get("claim.noClaim"))
-            return
-        }
-
-        if (sender.uniqueId != claim.owner) {
-            sender.sendNoPermission()
-            return
-        }
-
-        if (PlayerManager.getPlayer(Bukkit.getOfflinePlayer(target.uniqueId)).remainingClaimChunks < claim.chunkCount()) {
-            sender.sendMessage(
-                LocaleManager.get(
-                    "claim.transfer.notEnoughChunks", Placeholder.component("player", target.displayName())
-                )
-            )
-            return
-        }
-
-        PlayerManager.getPlayer(claim.getPlayerOwner()).remainingClaimChunks += claim.chunkCount()
-        claim.owner = target.uniqueId
-        PlayerManager.getPlayer(Bukkit.getOfflinePlayer(target.uniqueId)).remainingClaimChunks -= claim.chunkCount()
-        sender.sendMessage(
-            LocaleManager.get(
-                "claim.transfer.success",
-                Placeholder.component("claim", claim.name),
-                Placeholder.component("player", target.displayName())
-            )
-        )
-        target.sendMessage(
-            LocaleManager.get(
-                "claim.transfer.newOwner", Placeholder.component("claim", target.displayName())
-            )
-        )
-    }
-
-    @CommandMethod("claim rename <new>")
-    @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
-    @CommandDescription("Renames the current claim.")
-    fun rename(
-        sender: Player,
-        @Greedy @Argument("new") new: String,
-    ) {
-        val claim = ClaimManager.getClaim(sender.chunk)
-        if (claim == null) {
-            sender.sendNotInAClaim()
-            return
-        }
-
-        if (sender.uniqueId != claim.owner) {
-            sender.sendNoPermission()
-            return
-        }
-
-        val name = NoGrief.MINI_MESSAGE.deserialize(new)
-        val oldName = claim.name
-        sender.sendMessage(
-            LocaleManager.get(
-                "claim.renamed", Placeholder.component("old", oldName), Placeholder.component("new", name)
-            )
-        )
-        claim.name = name
-    }
-
-    private fun hasClaimChunks(player: Player): Boolean {
-        if (!PlayerManager.getPlayer(player).hasClaimChunks()) {
-            player.sendMessage(LocaleManager.get("player.notEnoughClaimChunks"))
-            return false
-        }
-        return true
-    }
 
     /**
      * Finds a claim owned by [player] that is N, E, S, or W of the player's current chunk.

@@ -30,18 +30,17 @@ object AdminCommands {
                 sender.sendMessage(
                     LocaleManager.get(
                         "admin.reload.specific",
-                        Placeholder.component("config", Component.text("${Resource.MAIN}", NamedTextColor.AQUA))
+                        Placeholder.component("config", Component.text(Resource.MAIN.toString().lowercase(), NamedTextColor.AQUA))
                     )
                 )
             }
 
             Resource.LOCALE -> {
                 LocaleManager.reload()
-                sender.sendMessage(LocaleManager.get("admin.reload.specific"))
                 sender.sendMessage(
                     LocaleManager.get(
                         "admin.reload.specific",
-                        Placeholder.component("config", Component.text("${Resource.LOCALE}", NamedTextColor.AQUA))
+                        Placeholder.component("config", Component.text(Resource.LOCALE.toString().lowercase(), NamedTextColor.AQUA))
                     )
                 )
             }

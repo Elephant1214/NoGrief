@@ -3,9 +3,10 @@ version: "$version"
 main: me.elephant1214.nogrief.NoGrief
 author: Elephant_1214
 api-version: "1.20"
+loader: me.elephant1214.nogrief.bootstrap.NoGriefLoader
 bootstrapper: me.elephant1214.nogrief.bootstrap.NoGriefBootstrap
-dependencies: 
-  server: 
+dependencies:
+  server:
     squaremap:
       load: BEFORE
       required: false

@@ -2,7 +2,7 @@ package me.elephant1214.nogrief.claims.listeners
 
 import me.elephant1214.nogrief.claims.Claim
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.constants.sendCantDoThisHere
+import me.elephant1214.nogrief.utils.cancelInteractEvent
 import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.Container
@@ -24,8 +24,7 @@ object InteractListener : Listener {
         val claim = ClaimManager.getClaim(block.chunk) ?: return
         
         if (!canInteract(block, claim, event.player)) {
-            event.isCancelled = true
-            event.player.sendCantDoThisHere()
+            event.cancelInteractEvent()
         }
     }
     
@@ -57,8 +56,7 @@ object InteractListener : Listener {
         if (clickedStack.type == Material.FIREWORK_ROCKET) return
 
         if (clickedStack.type.toString().uppercase().contains("AXE") && !claim.canBreak(event.player)) {
-            event.isCancelled = true
-            event.player.sendCantDoThisHere()
+            event.cancelInteractEvent()
             return
         }
 
@@ -68,7 +66,6 @@ object InteractListener : Listener {
         if (claim.hasEntitiesPerm(event.player)) return
 
         if (claim.canInteract(event.player)) return
-        event.isCancelled = true
-        event.player.sendCantDoThisHere()
+        event.cancelInteractEvent()
     }
 }

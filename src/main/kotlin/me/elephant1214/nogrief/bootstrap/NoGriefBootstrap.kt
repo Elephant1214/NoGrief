@@ -6,6 +6,7 @@ import io.papermc.paper.plugin.bootstrap.PluginProviderContext
 import me.elephant1214.nogrief.NoGrief
 import org.bukkit.plugin.java.JavaPlugin
 
+@Suppress("UnstableApiUsage")
 class NoGriefBootstrap : PluginBootstrap {
     override fun bootstrap(context: BootstrapContext) {}
 

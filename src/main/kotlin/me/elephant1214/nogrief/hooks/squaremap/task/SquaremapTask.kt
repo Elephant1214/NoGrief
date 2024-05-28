@@ -1,8 +1,8 @@
-package me.elephant1214.nogrief.squaremap.task
+package me.elephant1214.nogrief.hooks.squaremap.task
 
 import me.elephant1214.nogrief.claims.Claim
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.squaremap.utils.getPoly
+import me.elephant1214.nogrief.hooks.squaremap.utils.getPoly
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.World
 import org.bukkit.scheduler.BukkitRunnable
