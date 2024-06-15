@@ -6,31 +6,35 @@ import cloud.commandframework.annotations.CommandMethod
 import cloud.commandframework.annotations.specifier.Greedy
 import me.elephant1214.ccfutils.annotations.BetterCmdPerm
 import me.elephant1214.nogrief.NoGrief
+import me.elephant1214.nogrief.claims.ClaimColor
 import me.elephant1214.nogrief.claims.ClaimManager
-import me.elephant1214.nogrief.claims.permissions.ClaimPermission
 import me.elephant1214.nogrief.constants.CLAIM
 import me.elephant1214.nogrief.constants.sendNoPermission
 import me.elephant1214.nogrief.constants.sendNotInAClaim
 import me.elephant1214.nogrief.locale.LocaleManager
+import me.elephant1214.nogrief.menus.PermissionsMenu
 import me.elephant1214.nogrief.players.PlayerManager
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
+import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
 import org.bukkit.permissions.PermissionDefault
-import java.util.*
 
 @Suppress("unused")
 object ClaimManagementCommands {
-    @CommandMethod("claim permission <target> <permission> <state>")
+    @CommandMethod("claim permissions <target>")
     @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
-    @CommandDescription("Changes a permission for the specified player in your current claim. Giving a player manage gives them ALL permissions.")
-    fun setPermission(
+    @CommandDescription("Allows you to change the specified player's permissions in your current claim.")
+    fun permissionManagement(
         sender: Player,
-        @Argument("target") target: Player,
-        @Argument("permission") permission: ClaimPermission,
-        @Argument("state") state: Boolean,
+        @Argument("target") target: OfflinePlayer,
     ) {
+        if (target.name == null) {
+            sender.sendMessage(LocaleManager.get("player.neverJoinedBefore"))
+            return
+        }
+        
         val claim = ClaimManager.getClaim(sender.chunk)
         if (claim == null) {
             sender.sendNotInAClaim()
@@ -40,22 +44,31 @@ object ClaimManagementCommands {
             sender.sendNoPermission()
             return
         }
+        
+        PermissionsMenu.permissionsMenu(sender, claim, target)
+    }
 
-        if (permission == ClaimPermission.MANAGE) {
-            if (state) {
-                claim.setPermissions(target, EnumSet.allOf(ClaimPermission::class.java), true)
-            } else {
-                claim.setPermission(target, ClaimPermission.MANAGE, false)
-            }
-        } else {
-            claim.setPermission(target, permission, state)
+    @CommandMethod("claim color <color>")
+    @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
+    @CommandDescription("Changes a map color of a claim.")
+    fun setColor(
+        sender: Player,
+        @Argument("color") color: ClaimColor,
+    ) {
+        val claim = ClaimManager.getClaim(sender.chunk)
+        if (claim == null) {
+            sender.sendNotInAClaim()
+            return
+        }
+        if (!claim.canManageClaim(sender)) {
+            sender.sendNoPermission()
+            return
         }
 
         sender.sendMessage(
             LocaleManager.get(
-                "claim.permissions.updated",
-                Placeholder.component("permission", Component.text(permission.toString().replace('_', ' '))),
-                Placeholder.component("player", target.displayName())
+                "claim.color.updated",
+                Placeholder.component("color", Component.text(color.toString().lowercase()))
             )
         )
     }

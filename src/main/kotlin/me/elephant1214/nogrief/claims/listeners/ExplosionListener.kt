@@ -23,10 +23,17 @@ object ExplosionListener : Listener {
                 while (causingEntity is TNTPrimed && causingEntity.source != null) {
                     causingEntity = causingEntity.source!!
                 }
+                if (causingEntity is TNTPrimed && causingEntity.source == null) {
+                    event.isCancelled = true
+                    return
+                }
             }
 
             is Fireball -> {
-                causingEntity = ((event.entity as Fireball).shooter as Ghast).target
+                val shooter = (event.entity as Fireball).shooter
+                if (shooter != null && shooter is Mob) {
+                    causingEntity = ((event.entity as Fireball).shooter as Mob).target
+                }
             }
         }
 

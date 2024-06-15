@@ -11,7 +11,6 @@ import xyz.jpenilla.squaremap.api.Key.key
 import xyz.jpenilla.squaremap.api.MapWorld
 import xyz.jpenilla.squaremap.api.SimpleLayerProvider
 import xyz.jpenilla.squaremap.api.marker.MarkerOptions
-import java.awt.Color
 
 class SquaremapTask private constructor(
     private val world: World,
@@ -53,10 +52,10 @@ class SquaremapTask private constructor(
             claim.getPlayerOwner().name ?: "Unknown"
         }
         return MarkerOptions.builder()
-            .strokeColor(Color.CYAN)
+            .strokeColor(claim.color.color)
             .strokeWeight(2)
             .strokeOpacity(0.75)
-            .fillColor(Color.CYAN)
+            .fillColor(claim.color.color)
             .fillOpacity(0.2)
             .clickTooltip("Owner: $ownerName")
             .hoverTooltip(PlainTextComponentSerializer.plainText().serialize(claim.name))

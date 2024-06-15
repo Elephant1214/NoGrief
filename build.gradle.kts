@@ -6,7 +6,6 @@ plugins {
     kotlin("plugin.serialization") version("1.9.24")
     id("io.papermc.paperweight.userdev") version("1.7.1")
     id("xyz.jpenilla.run-paper") version("2.3.0")
-    id("io.github.goooler.shadow") version("8.1.7")
 }
 
 group = "me.elephant1214.nogrief"
@@ -25,20 +24,15 @@ repositories {
     maven("https://www.jitpack.io")
 }
 
-configurations.implementation {
-    extendsFrom(configurations.getByName("shadow"))
-}
-
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("cloud.commandframework:cloud-paper:1.8.4")
     implementation("cloud.commandframework:cloud-annotations:1.8.4")
     implementation("cloud.commandframework:cloud-minecraft-extras:1.8.4")
-    shadow("com.github.Elephant1214:CCFUtils:main-SNAPSHOT") {
-        isTransitive = false
-    }
-    implementation("xyz.jpenilla:squaremap-api:1.2.3")
+    implementation("com.github.Elephant1214:CCFUtils:0a75e37d55")
+    implementation("com.github.Elephant1214:InventoryMenus:fd2b7367c9")
+    implementation("xyz.jpenilla:squaremap-api:1.2.4")
     paperweight.devBundle("org.purpurmc.purpur", "1.20.6-R0.1-SNAPSHOT")
 }
 
@@ -60,20 +54,6 @@ tasks {
     }
     javadoc {
         options.encoding = Charsets.UTF_8.name()
-    }
-    shadowJar {
-        configurations = listOf(project.configurations.getByName("shadow"))
-        // relocate("org.jetbrains", "me.elephant1214.nogrief.deps.org.jetbrains")
-        // relocate("org.intellij", "me.elephant1214.nogrief.deps.org.intellij")
-        // relocate("kotlin", "me.elephant1214.nogrief.deps.kotlin")
-        // relocate("kotlinx", "me.elephant1214.nogrief.deps.kotlin")
-        // relocate("net.kyori.examination", "me.elephant1214.nogrief.deps.net.kyori.examination")
-        // relocate("cloud.commandframework", "me.elephant1214.nogrief.deps.cloud.commandframework")
-        relocate("me.elephant1214.ccfutils", "me.elephant1214.nogrief.deps.ccfutils")
-        mergeServiceFiles()
-    }
-    jar {
-        dependsOn(shadowJar)
     }
     processResources {
         val props = mapOf("version" to version)

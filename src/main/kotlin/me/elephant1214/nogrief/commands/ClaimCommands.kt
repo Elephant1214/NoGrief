@@ -19,23 +19,38 @@ import org.bukkit.permissions.PermissionDefault
 
 @Suppress("unused")
 object ClaimCommands {
-    @CommandMethod("newclaim")
+    @CommandMethod("claim")
     @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
-    @CommandDescription("Creates a claim in the chunk you're standing in.")
-    fun createClaim(
+    @CommandDescription("Claims the chunk you're standing in. Also creates a new claim if there isn't one in a surrounding chunk.")
+    fun claim(
         sender: Player,
     ) {
         if (!sender.hasClaimChunks()) return
 
-        when (Claim.createClaim(sender, ClaimChunk(sender.chunk))) {
-            ClaimChunkAddResult.SUCCESS -> sender.sendMessage(
+        val chunk = findClaim(sender)
+        if (chunk == null) {
+            when (Claim.createClaim(sender, ClaimChunk(sender.chunk))) {
+                ClaimChunkAddResult.SUCCESS -> sender.sendMessage(
+                    LocaleManager.get(
+                        "claim.created", Placeholder.component("chunk", sender.chunk.toMsgComp())
+                    )
+                )
+
+                ClaimChunkAddResult.FAILED_CHUNK_ALREADY_CLAIMED -> sender.sendMessage(LocaleManager.get("chunk.alreadyClaimed"))
+                ClaimChunkAddResult.FAILED_WRONG_WORLD -> error("Impossible state")
+            }
+        } else {
+            val claim = ClaimManager.getClaim(chunk)!!
+            if (sender.uniqueId != claim.owner) {
+                sender.sendNoPermission()
+                return
+            }
+            claim.addChunk(ClaimChunk(sender.chunk))
+            sender.sendMessage(
                 LocaleManager.get(
-                    "claim.created", Placeholder.component("chunk", sender.chunk.toMsgComp())
+                    "chunk.claimed", Placeholder.component("chunk", sender.chunk.toMsgComp())
                 )
             )
-
-            ClaimChunkAddResult.FAILED_CHUNK_ALREADY_CLAIMED -> sender.sendMessage(LocaleManager.get("chunk.alreadyClaimed"))
-            ClaimChunkAddResult.FAILED_WRONG_WORLD -> error("Impossible state")
         }
     }
 
@@ -58,39 +73,6 @@ object ClaimCommands {
 
         ClaimManager.deleteClaim(claim)
         sender.sendMessage(LocaleManager.get("claim.deleted", Placeholder.component("claim", claim.name)))
-    }
-
-    @CommandMethod("claim")
-    @BetterCmdPerm(CLAIM, permDefault = PermissionDefault.TRUE)
-    @CommandDescription("Adds the chunk to the claim.")
-    fun claimChunk(
-        sender: Player,
-    ) {
-        if (!sender.hasClaimChunks()) return
-        
-        val currentClaim = ClaimManager.getClaim(sender.chunk)
-        if (currentClaim != null) {
-            sender.sendMessage(LocaleManager.get("chunk.alreadyClaimed"))
-            return
-        }
-
-        val chunk = findClaim(sender)
-        if (chunk == null) {
-            sender.sendMessage(LocaleManager.get("chunk.noConnectingClaim"))
-            return
-        }
-
-        val claim = ClaimManager.getClaim(chunk)!!
-        if (sender.uniqueId != claim.owner) {
-            sender.sendNoPermission()
-            return
-        }
-        claim.addChunk(ClaimChunk(sender.chunk))
-        sender.sendMessage(
-            LocaleManager.get(
-                "chunk.claimed", Placeholder.component("chunk", sender.chunk.toMsgComp())
-            )
-        )
     }
 
     @CommandMethod("unclaim")

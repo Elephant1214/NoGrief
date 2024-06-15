@@ -15,6 +15,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import me.elephant1214.nogrief.claims.Claim
 import me.elephant1214.nogrief.claims.ClaimChunk
+import me.elephant1214.nogrief.claims.ClaimColor
 import me.elephant1214.nogrief.claims.permissions.ClaimPermission
 import net.kyori.adventure.text.Component
 import org.bukkit.World
@@ -24,18 +25,22 @@ import java.util.*
 object ClaimSerializer : KSerializer<Claim> {
     private const val ID_INDEX = 0
     private const val NAME_INDEX = 1
-    private const val OWNER_INDEX = 2
-    private const val WORLD_INDEX = 3
-    private const val CHUNKS_INDEX = 4
-    private const val PERMS_INDEX = 5
-    private const val MODIFIED_INDEX = 6
+    private const val COLOR_INDEX = 2
+    private const val OWNER_INDEX = 3
+    private const val WORLD_INDEX = 4
+    private const val CHUNKS_INDEX = 5
+    private const val DEFAULT_PERMS_INDEX = 6
+    private const val PERMS_INDEX = 7
+    private const val MODIFIED_INDEX = 8
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("claim") {
         element<@Serializable(UUIDSerializer::class) UUID>("id")
         element<Component>("name")
+        element<ClaimColor>("color")
         element<@Serializable(UUIDSerializer::class) UUID>("owner")
-        element<@Serializable(WorldSerializer::class) World>("world")
+        element<World>("world")
         element<Set<Long>>("chunks")
+        element<@Serializable(ClaimPermEnumSetSerializer::class) EnumSet<ClaimPermission>>("defaultPermissions")
         element<Map<@Serializable(UUIDSerializer::class) UUID, @Serializable(ClaimPermEnumSetSerializer::class) EnumSet<ClaimPermission>>>(
             "permissions"
         )
@@ -46,10 +51,17 @@ object ClaimSerializer : KSerializer<Claim> {
         val composite = encoder.beginStructure(descriptor)
         composite.encodeUUID(ID_INDEX, value.claimId)
         composite.encodeSerializableElement(descriptor, NAME_INDEX, ComponentSerializer, value.name)
+        composite.encodeSerializableElement(descriptor, COLOR_INDEX, ClaimColor.serializer(), value.color)
         composite.encodeUUID(OWNER_INDEX, value.owner)
         composite.encodeSerializableElement(descriptor, WORLD_INDEX, WorldSerializer, value.world)
         composite.encodeSerializableElement(
             descriptor, CHUNKS_INDEX, SetSerializer(Long.serializer()), value.getChunksForSerial()
+        )
+        composite.encodeSerializableElement(
+            descriptor,
+            DEFAULT_PERMS_INDEX,
+            ClaimPermEnumSetSerializer,
+            value.defaultPermissions
         )
         composite.encodeSerializableElement(
             descriptor,
@@ -64,9 +76,11 @@ object ClaimSerializer : KSerializer<Claim> {
     override fun deserialize(decoder: Decoder): Claim {
         lateinit var claimId: UUID
         lateinit var name: Component
+        lateinit var color: ClaimColor
         lateinit var owner: UUID
         lateinit var world: World
         lateinit var chunks: Set<Long>
+        lateinit var defaultPermissions: EnumSet<ClaimPermission>
         lateinit var permissions: Map<UUID, EnumSet<ClaimPermission>>
         lateinit var modified: Instant
 
@@ -76,10 +90,16 @@ object ClaimSerializer : KSerializer<Claim> {
                 CompositeDecoder.DECODE_DONE -> break@loop
                 ID_INDEX -> claimId = composite.decodeUUID(index)
                 NAME_INDEX -> name = composite.decodeSerializableElement(descriptor, NAME_INDEX, ComponentSerializer)
+                COLOR_INDEX -> color =
+                    composite.decodeSerializableElement(descriptor, COLOR_INDEX, ClaimColor.serializer())
+
                 OWNER_INDEX -> owner = composite.decodeUUID(index)
                 WORLD_INDEX -> world = composite.decodeSerializableElement(descriptor, index, WorldSerializer)
                 CHUNKS_INDEX -> chunks =
                     composite.decodeSerializableElement(descriptor, index, SetSerializer(Long.serializer()))
+
+                DEFAULT_PERMS_INDEX -> defaultPermissions =
+                    composite.decodeSerializableElement(descriptor, index, ClaimPermEnumSetSerializer)
 
                 PERMS_INDEX -> permissions = composite.decodeSerializableElement(
                     descriptor, index, MapSerializer(UUIDSerializer, ClaimPermEnumSetSerializer)
@@ -92,13 +112,15 @@ object ClaimSerializer : KSerializer<Claim> {
         composite.endStructure(descriptor)
 
         return Claim(
-            claimId,
-            name,
-            owner,
-            world,
-            ClaimChunk.fromLongSet(world, chunks),
-            permissions.toMutableMap(),
-            modified
+            claimId = claimId,
+            name = name,
+            color = color,
+            ownerIn = owner,
+            world = world,
+            _chunks = ClaimChunk.fromLongSet(world, chunks),
+            defaultPermissions = defaultPermissions,
+            _permissions = permissions.toMutableMap(),
+            modifiedIn = modified
         )
     }
 

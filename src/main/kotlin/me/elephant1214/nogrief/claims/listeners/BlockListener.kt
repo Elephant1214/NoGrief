@@ -139,14 +139,14 @@ object BlockListener : Listener {
 
     private fun onPiston(event: BlockPistonEvent, blocks: List<Block>) {
         val pistonClaim = ClaimManager.getClaim(event.block.chunk)
-        if (pistonClaim == null) {
+        if (pistonClaim == null && !NoGrief.cfg.allowPistonsOutsideClaims) {
             event.isCancelled = true
             return
         }
 
         blocks.forEach { block ->
             val claim = ClaimManager.getClaim(block.chunk)
-            if (claim == null || pistonClaim != claim) {
+            if ((claim == null && !NoGrief.cfg.allowPistonsOutsideClaims) || pistonClaim != claim) {
                 event.isCancelled = true
                 return@onPiston
             }

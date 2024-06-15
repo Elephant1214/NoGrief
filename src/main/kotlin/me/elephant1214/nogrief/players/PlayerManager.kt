@@ -26,7 +26,7 @@ object PlayerManager {
         }
     }
 
-    fun inBypassClaimMode(player: Player): Boolean = this.getPlayer(player).inBypassMode
+    fun inBypassClaimMode(player: OfflinePlayer): Boolean = this.getPlayer(player).inBypassMode
 
     fun setAdminClaimMode(player: Player, state: Boolean) {
         if (player.hasPermission(ADMIN)) {

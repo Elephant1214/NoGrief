@@ -42,4 +42,4 @@ private const val TILE_ENTITIES_PERM_DESC = "Allows building, placing, and inter
 
 private const val MANAGE_PERM_NAME = "Claim Management"
 private const val MANAGE_PERM_DESC =
-    "Allows a player to manage other players' permissions in claim, but only when the target player does not also have Manage."
+    "Allows a player to manage other players' permissions in a claim, but only when the other player does not also have the manage permission."

@@ -17,9 +17,11 @@ import java.util.*
 class Claim(
     val claimId: UUID = ClaimManager.newClaimID(),
     var name: Component,
+    var color: ClaimColor = ClaimColor.CYAN,
     ownerIn: UUID,
     val world: World,
     private val _chunks: MutableSet<ClaimChunk> = mutableSetOf(),
+    val defaultPermissions: EnumSet<ClaimPermission> = EnumSet.noneOf(ClaimPermission::class.java),
     private val _permissions: MutableMap<UUID, EnumSet<ClaimPermission>> = mutableMapOf(),
     modifiedIn: Instant = Instant.now()
 ) {
@@ -42,7 +44,7 @@ class Claim(
      * Will be null if the player is not in the game.
      */
     fun getPlayerOwner(): OfflinePlayer = Bukkit.getOfflinePlayer(this.owner)
-    
+
     fun getChunks(): Set<ClaimChunk> = this._chunks.toSet()
 
     fun chunkCount(): Int = this._chunks.size
@@ -50,35 +52,38 @@ class Claim(
     fun isOwner(player: Player): Boolean = this.owner == player.uniqueId
 
     /**
-     * @return Whether [player] has [permission] in this claim.
+     * @return Whether [player] has [permission] in this claim or bypasses permissions in some way.
      */
-    private fun hasPermission(player: Player, permission: ClaimPermission): Boolean =
-        this.owner == player.uniqueId || PlayerManager.inBypassClaimMode(player) || this._permissions[player.uniqueId]?.contains(
+    private fun hasPermission(player: OfflinePlayer, permission: ClaimPermission): Boolean =
+        this.owner == player.uniqueId || PlayerManager.inBypassClaimMode(player) || this.defaultPermissions.contains(
             permission
-        ) ?: false
+        ) || this._permissions[player.uniqueId]?.contains(permission) ?: false
 
-    fun canBreak(player: Player): Boolean = hasPermission(player, ClaimPermission.BREAK)
+    fun canBreak(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.BREAK)
 
-    fun canPlace(player: Player): Boolean = hasPermission(player, ClaimPermission.PLACE)
+    fun canPlace(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.PLACE)
 
-    fun canAccessContainers(player: Player): Boolean = hasPermission(player, ClaimPermission.CONTAINERS)
+    fun canAccessContainers(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.CONTAINERS)
 
-    fun hasEntitiesPerm(player: Player): Boolean = hasPermission(player, ClaimPermission.ENTITIES)
+    fun hasEntitiesPerm(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.ENTITIES)
 
-    fun hasExplosionPerm(player: Player): Boolean = hasPermission(player, ClaimPermission.EXPLOSIONS)
+    fun hasExplosionPerm(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.EXPLOSIONS)
 
-    fun hasFirePerm(player: Player): Boolean = hasPermission(player, ClaimPermission.FIRE)
+    fun hasFirePerm(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.FIRE)
 
-    fun canInteract(player: Player): Boolean = hasPermission(player, ClaimPermission.INTERACT)
+    fun canInteract(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.INTERACT)
 
-    fun hasTilePerm(player: Player): Boolean = hasPermission(player, ClaimPermission.TILE_ENTITIES)
+    fun hasTilePerm(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.TILE_ENTITIES)
 
-    fun canManageClaim(player: Player): Boolean = hasPermission(player, ClaimPermission.MANAGE)
+    fun canManageClaim(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.MANAGE)
+
+    fun getPermission(player: OfflinePlayer, permission: ClaimPermission): Boolean =
+        this._permissions[player.uniqueId]?.contains(permission) ?: false
 
     /**
      * Sets a [ClaimPermission] for a player.
      */
-    fun setPermission(player: Player, permission: ClaimPermission, state: Boolean) {
+    fun setPermission(player: OfflinePlayer, permission: ClaimPermission, state: Boolean) {
         if (!this._permissions.containsKey(player.uniqueId)) {
             this._permissions[player.uniqueId] = EnumSet.noneOf(ClaimPermission::class.java)
         }
@@ -92,14 +97,14 @@ class Claim(
         if (set.isEmpty()) {
             this._permissions.remove(player.uniqueId)
         }
-        
+
         this@Claim.markModified()
     }
 
     /**
      * Sets multiple [ClaimPermission]s for a player.
      */
-    fun setPermissions(player: Player, permissions: EnumSet<ClaimPermission>, state: Boolean) {
+    fun setPermissions(player: OfflinePlayer, permissions: EnumSet<ClaimPermission>, state: Boolean) {
         if (!this._permissions.containsKey(player.uniqueId)) {
             this._permissions[player.uniqueId] = EnumSet.noneOf(ClaimPermission::class.java)
         }
@@ -113,7 +118,7 @@ class Claim(
         if (set.isEmpty()) {
             this._permissions.remove(player.uniqueId)
         }
-        
+
         this@Claim.markModified()
     }
 
