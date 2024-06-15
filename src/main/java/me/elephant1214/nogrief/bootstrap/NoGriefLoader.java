@@ -20,7 +20,7 @@ public class NoGriefLoader implements PluginLoader {
         resolver.addDependency(new Dependency(new DefaultArtifact("cloud.commandframework:cloud-annotations:1.8.4"), null));
         resolver.addDependency(new Dependency(new DefaultArtifact("cloud.commandframework:cloud-minecraft-extras:1.8.4"), null));
         resolver.addDependency(new Dependency(new DefaultArtifact("com.github.Elephant1214:CCFUtils:0a75e37d55"), null));
-        resolver.addDependency(new Dependency(new DefaultArtifact("com.github.Elephant1214:InventoryMenus:fd2b7367c9"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("com.github.Elephant1214:InventoryMenus:7ce62cb02b"), null));
 
         classpathBuilder.addLibrary(resolver);
     }

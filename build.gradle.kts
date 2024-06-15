@@ -31,7 +31,7 @@ dependencies {
     implementation("cloud.commandframework:cloud-annotations:1.8.4")
     implementation("cloud.commandframework:cloud-minecraft-extras:1.8.4")
     implementation("com.github.Elephant1214:CCFUtils:0a75e37d55")
-    implementation("com.github.Elephant1214:InventoryMenus:fd2b7367c9")
+    implementation("com.github.Elephant1214:InventoryMenus:7ce62cb02b")
     implementation("xyz.jpenilla:squaremap-api:1.2.4")
     paperweight.devBundle("org.purpurmc.purpur", "1.20.6-R0.1-SNAPSHOT")
 }
