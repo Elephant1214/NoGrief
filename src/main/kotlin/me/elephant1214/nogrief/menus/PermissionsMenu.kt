@@ -115,7 +115,7 @@ object PermissionsMenu {
             add(Component.text(""))
             add(
                 Component.text("Current: ", TextColor.color(color))
-                    .append(LocaleManager.get(if (!currentState) "allow" else "deny"))
+                    .append(LocaleManager.get(if (currentState) "allow" else "deny"))
             )
         }
 
