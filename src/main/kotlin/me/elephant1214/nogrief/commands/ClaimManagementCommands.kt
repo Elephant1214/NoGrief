@@ -30,11 +30,6 @@ object ClaimManagementCommands {
         sender: Player,
         @Argument("target") target: OfflinePlayer,
     ) {
-        if (target.name == null) {
-            sender.sendMessage(LocaleManager.get("player.neverJoinedBefore"))
-            return
-        }
-        
         val claim = ClaimManager.getClaim(sender.chunk)
         if (claim == null) {
             sender.sendNotInAClaim()

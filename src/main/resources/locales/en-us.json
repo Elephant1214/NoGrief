@@ -30,7 +30,6 @@
     "localeManager": "<aqua>locale manager",
     "off": "<red>OFF",
     "on": "<green>ON",
-    "player.neverJoinedBefore": "<red>That player has never joined the server before!",
     "player.notEnoughClaimChunks": "<red>You don't have enough claim chunks to do this!",
     "player.remainingChunks": "<aqua>You currently have <remaining>/<total> <aqua>claim chunks available",
     "wild.noPistons": "<yellow>Pistons cannot move outside of claims"
