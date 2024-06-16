@@ -55,9 +55,8 @@ class Claim(
      * @return Whether [player] has [permission] in this claim or bypasses permissions in some way.
      */
     private fun hasPermission(player: OfflinePlayer, permission: ClaimPermission): Boolean =
-        this.owner == player.uniqueId || PlayerManager.inBypassClaimMode(player) || this.defaultPermissions.contains(
-            permission
-        ) || this._permissions[player.uniqueId]?.contains(permission) ?: false
+        this.owner == player.uniqueId || PlayerManager.inBypassMode(player)|| this.defaultPermissions.contains(permission)
+                || this._permissions[player.uniqueId]?.contains(permission) ?: false
 
     fun canBreak(player: OfflinePlayer): Boolean = hasPermission(player, ClaimPermission.BREAK)
 

@@ -11,6 +11,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import me.elephant1214.ccfutils.CCFUtils
+import me.elephant1214.inventorymenus.InventoryMenus
 import me.elephant1214.nogrief.claims.ClaimManager
 import me.elephant1214.nogrief.claims.listeners.BlockListener
 import me.elephant1214.nogrief.claims.listeners.EntityListener
@@ -76,6 +77,7 @@ object NoGrief : JavaPlugin() {
 
         ClaimManager.loadClaims()
         this.registerListeners()
+        InventoryMenus.init(this)
 
         if (Bukkit.getPluginManager().isPluginEnabled("squaremap")) {
             this.squaremapHook = SquaremapHook

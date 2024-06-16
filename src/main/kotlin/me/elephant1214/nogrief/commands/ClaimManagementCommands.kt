@@ -35,11 +35,15 @@ object ClaimManagementCommands {
             sender.sendNotInAClaim()
             return
         }
-        if (!claim.canManageClaim(sender) || (claim.canManageClaim(target) && !claim.isOwner(sender))) {
+        if (target.uniqueId == claim.owner) {
+            sender.sendMessage(LocaleManager.get("claim.isOwner"))
+            return
+        }
+        if (!claim.canManageClaim(sender) || (claim.canManageClaim(target) && !(claim.isOwner(sender) || PlayerManager.inBypassMode(sender)))) {
             sender.sendNoPermission()
             return
         }
-        
+
         PermissionsMenu.permissionsMenu(sender, claim, target)
     }
 

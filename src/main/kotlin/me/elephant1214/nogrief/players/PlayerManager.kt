@@ -20,13 +20,13 @@ object PlayerManager {
     fun getPlayer(player: OfflinePlayer): PlayerData =
         this._playerData[player.uniqueId] ?: this.loadData(player).let { this._playerData[player.uniqueId]!! }
 
-    fun setBypassClaimMode(player: Player, state: Boolean) {
+    fun setBypassMode(player: Player, state: Boolean) {
         if (player.hasPermission(CLAIM_BYPASS)) {
             this.getPlayer(player).inBypassMode = state
         }
     }
 
-    fun inBypassClaimMode(player: OfflinePlayer): Boolean = this.getPlayer(player).inBypassMode
+    fun inBypassMode(player: OfflinePlayer): Boolean = this.getPlayer(player).inBypassMode
 
     fun setAdminClaimMode(player: Player, state: Boolean) {
         if (player.hasPermission(ADMIN)) {

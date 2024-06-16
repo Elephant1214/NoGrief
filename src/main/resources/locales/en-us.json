@@ -18,6 +18,7 @@
     "claim.cantDoThisHere": "<red>You don't have permission to do this here!",
     "claim.deleted": "<claim> <green>was successfully deleted",
     "claim.deleted.noChunks": "<aqua>The claim was deleted as there are no chunks remaining",
+    "claim.isOwner": "<red>You cannot modify the permissions of the owner of a claim!",
     "claim.noClaim": "<red>You must be in a claim to do this!",
     "claim.noPermission": "<red>You do not have permission to do this!",
     "claim.permissions.updated": "<green>Updated claim permissions for <player>",

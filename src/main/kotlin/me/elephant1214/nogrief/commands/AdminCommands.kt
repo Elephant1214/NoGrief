@@ -96,8 +96,8 @@ object AdminCommands {
     fun claimBypass(
         sender: Player,
     ) {
-        val newState = !PlayerManager.inBypassClaimMode(sender)
-        PlayerManager.setBypassClaimMode(sender, newState)
+        val newState = !PlayerManager.inBypassMode(sender)
+        PlayerManager.setBypassMode(sender, newState)
         sender.sendMessage(
             LocaleManager.get(
                 "admin.claimBypass",
