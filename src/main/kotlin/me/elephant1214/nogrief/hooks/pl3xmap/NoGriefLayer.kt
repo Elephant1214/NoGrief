@@ -19,7 +19,7 @@ class NoGriefLayer(
         zIndex = 10
     }
 
-    override fun getMarkers(): MutableCollection<Marker<*>> = Pl3xMapHook.getMarkers(this.world)
+    override fun getMarkers(): MutableList<Marker<*>> = Pl3xMapHook.getMarkers(this.world)
 
     companion object {
         const val KEY: String = "nogrief"

@@ -127,7 +127,7 @@ object ClaimCommands {
      */
     private fun findClaim(player: Player): ClaimChunk? {
         val currentChunk = player.chunk
-        val surrounding = mutableListOf(ClaimChunk(currentChunk))
+        val surrounding = arrayListOf(ClaimChunk(currentChunk))
 
         val directions = listOf(
             Pair(0, -1),

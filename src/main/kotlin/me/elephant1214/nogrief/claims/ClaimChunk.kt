@@ -37,6 +37,6 @@ data class ClaimChunk(
 
     companion object {
         fun fromLongSet(world: World, chunks: Set<Long>): MutableSet<ClaimChunk> =
-            chunks.map { ClaimChunk(world, world.getChunkAt(it)) }.toMutableSet()
+            chunks.map { ClaimChunk(world, world.getChunkAt(it)) }.toHashSet()
     }
 }

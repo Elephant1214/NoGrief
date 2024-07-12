@@ -20,9 +20,9 @@ class Claim(
     var color: ClaimColor = ClaimColor.CYAN,
     ownerIn: UUID,
     val world: World,
-    private val _chunks: MutableSet<ClaimChunk> = mutableSetOf(),
+    private val _chunks: MutableSet<ClaimChunk> = hashSetOf(),
     val defaultPermissions: EnumSet<ClaimPermission> = EnumSet.noneOf(ClaimPermission::class.java),
-    private val _permissions: MutableMap<UUID, EnumSet<ClaimPermission>> = mutableMapOf(),
+    private val _permissions: MutableMap<UUID, EnumSet<ClaimPermission>> = hashMapOf(),
     modifiedIn: Instant = Instant.now()
 ) {
     var owner: UUID = ownerIn

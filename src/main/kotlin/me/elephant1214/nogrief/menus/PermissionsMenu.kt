@@ -110,7 +110,7 @@ object PermissionsMenu {
     }
 
     private fun makeLore(description: String, color: Int, currentState: Boolean): List<Component> =
-        mutableListOf<Component>().apply {
+        arrayListOf<Component>().apply {
             addAll(splitDesc(description))
             add(Component.text(""))
             add(
@@ -121,7 +121,7 @@ object PermissionsMenu {
 
     private fun splitDesc(text: String, maxLength: Int = 24): List<Component> {
         val words = text.split(" ")
-        val components = mutableListOf<Component>()
+        val components = arrayListOf<Component>()
         var line = StringBuilder()
 
         words.forEach { word ->

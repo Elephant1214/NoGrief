@@ -19,7 +19,7 @@ object Pl3xMapHook {
         world.layerRegistry.unregister(NoGriefLayer.KEY)
     }
 
-    fun getMarkers(world: World): MutableCollection<Marker<*>> {
+    fun getMarkers(world: World): MutableList<Marker<*>> {
         val claimsSet = ClaimManager.getClaims().filter { it.world.name == world.name }.toSet()
         if (claimsSet.isEmpty()) return arrayListOf()
 

@@ -19,7 +19,7 @@ object PlayerManager : Listener {
     private val playersDir: Path =
         NoGrief.dataDir.resolve("players").apply { if (!this@apply.exists()) this@apply.createDirectories() }
 
-    private val _playerData = mutableMapOf<UUID, PlayerData>()
+    private val _playerData = hashMapOf<UUID, PlayerData>()
 
     fun getPlayer(player: OfflinePlayer): PlayerData =
         this._playerData[player.uniqueId] ?: this.loadData(player).let { this._playerData[player.uniqueId]!! }
