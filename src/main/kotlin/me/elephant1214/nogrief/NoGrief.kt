@@ -19,18 +19,21 @@ import me.elephant1214.nogrief.claims.listeners.ExplosionListener
 import me.elephant1214.nogrief.claims.listeners.InteractListener
 import me.elephant1214.nogrief.commands.*
 import me.elephant1214.nogrief.configuration.NoGriefConfig
-import me.elephant1214.nogrief.listeners.DataListener
+import me.elephant1214.nogrief.hooks.pl3xmap.Pl3xHookListener
 import me.elephant1214.nogrief.locale.LocaleManager
 import me.elephant1214.nogrief.players.PlayerManager
-import me.elephant1214.nogrief.hooks.squaremap.hook.SquaremapHook
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
+import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.Listener
+import org.bukkit.event.world.WorldSaveEvent
 import org.bukkit.plugin.java.JavaPlugin
 import java.nio.file.Path
 import kotlin.io.path.*
 
-object NoGrief : JavaPlugin() {
+object NoGrief : JavaPlugin(), Listener {
     internal val JSON = Json {
         encodeDefaults = true
     }
@@ -49,7 +52,6 @@ object NoGrief : JavaPlugin() {
     private lateinit var annotationParser: AnnotationParser<CommandSender>
     var cfg: NoGriefConfig = NoGriefConfig()
         private set
-    private var squaremapHook: SquaremapHook? = null
 
     private fun loadCfg(): NoGriefConfig = try {
         JSON.decodeFromStream<NoGriefConfig>(this.cfgFile.inputStream())
@@ -79,22 +81,19 @@ object NoGrief : JavaPlugin() {
         this.registerListeners()
         InventoryMenus.init(this)
 
-        if (Bukkit.getPluginManager().isPluginEnabled("squaremap")) {
-            this.squaremapHook = SquaremapHook
-            this.logger.info("Squaremap found, enabled claim display hook")
+        if (Bukkit.getPluginManager().isPluginEnabled("Pl3xMap")) {
+            Pl3xHookListener.init()
+            this.logger.info("Pl3xMap found, enabled claim display hook")
         }
     }
 
     override fun onDisable() {
         this.fullSave()
-
-        if (this.squaremapHook != null) {
-            this.squaremapHook!!.disable()
-        }
     }
 
     private fun registerListeners() {
-        val listeners = listOf(BlockListener, EntityListener, ExplosionListener, InteractListener, DataListener)
+        val listeners: List<Listener> =
+            listOf(this, BlockListener, EntityListener, ExplosionListener, InteractListener, PlayerManager)
         listeners.forEach { this.server.pluginManager.registerEvents(it, this) }
     }
 
@@ -142,8 +141,13 @@ object NoGrief : JavaPlugin() {
         }
     }
 
-    internal fun fullSave() {
+    private fun fullSave() {
         PlayerManager.saveData()
         ClaimManager.saveClaims()
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    fun onWorldSave(event: WorldSaveEvent) {
+        fullSave()
     }
 }

@@ -21,6 +21,10 @@ repositories {
     mavenCentral()
     maven("https://repo.purpurmc.org/snapshots")
     maven("https://repo.papermc.io/repository/maven-public/")
+    exclusiveContent {
+        forRepository { maven("https://api.modrinth.com/maven") }
+        filter { includeGroup("maven.modrinth") }
+    }
     maven("https://www.jitpack.io")
 }
 
@@ -32,7 +36,7 @@ dependencies {
     implementation("cloud.commandframework:cloud-minecraft-extras:1.8.4")
     implementation("com.github.Elephant1214:CCFUtils:0a75e37d55")
     implementation("com.github.Elephant1214:InventoryMenus:8c76d03f54")
-    implementation("xyz.jpenilla:squaremap-api:1.2.4")
+    implementation("maven.modrinth:pl3xmap:1.20.6-499")
     paperweight.devBundle("org.purpurmc.purpur", "1.20.6-R0.1-SNAPSHOT")
 }
 

@@ -39,11 +39,8 @@ class Claim(
         ownerIn = owner,
         world = chunk.world,
     )
-
-    /**
-     * Will be null if the player is not in the game.
-     */
-    fun getPlayerOwner(): OfflinePlayer = Bukkit.getOfflinePlayer(this.owner)
+    
+    fun getOwnerPlayer(): OfflinePlayer = Bukkit.getOfflinePlayer(this.owner)
 
     fun getChunks(): Set<ClaimChunk> = this._chunks.toSet()
 
@@ -134,7 +131,7 @@ class Claim(
         if (chunk.world != this.world) return ClaimChunkAddResult.FAILED_WRONG_WORLD
         if (ClaimManager.getClaim(chunk) == null) {
             this._chunks.add(chunk)
-            PlayerManager.getPlayer(this.getPlayerOwner()).remainingClaimChunks -= 1
+            PlayerManager.getPlayer(this.getOwnerPlayer()).remainingClaimChunks -= 1
             this.markModified()
             return ClaimChunkAddResult.SUCCESS
         } else {
@@ -149,7 +146,7 @@ class Claim(
     fun removeChunk(chunk: ClaimChunk) {
         val removed = this._chunks.remove(chunk)
         if (removed) {
-            PlayerManager.getPlayer(this.getPlayerOwner()).remainingClaimChunks += 1
+            PlayerManager.getPlayer(this.getOwnerPlayer()).remainingClaimChunks += 1
             this.markModified()
         }
     }
@@ -176,7 +173,7 @@ class Claim(
             val claim = Claim(
                 owner.displayName().append(Component.text("'s Claim", NamedTextColor.AQUA)),
                 owner.uniqueId,
-                chunk
+                chunk,
             )
             val result = claim.addChunk(chunk)
             if (result == ClaimChunkAddResult.SUCCESS) {

@@ -7,11 +7,15 @@ import me.elephant1214.nogrief.constants.ADMIN
 import me.elephant1214.nogrief.constants.CLAIM_BYPASS
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.*
 
-object PlayerManager {
+object PlayerManager : Listener {
     private val playersDir: Path =
         NoGrief.dataDir.resolve("players").apply { if (!this@apply.exists()) this@apply.createDirectories() }
 
@@ -42,7 +46,7 @@ object PlayerManager {
         }
     }
 
-    internal fun loadData(player: OfflinePlayer) {
+    private fun loadData(player: OfflinePlayer) {
         val playerData = loadPlayerData(this.getPlayerDataPath(player.uniqueId))
         this._playerData[player.uniqueId] = playerData
     }
@@ -59,5 +63,10 @@ object PlayerManager {
             NoGrief.JSON.encodeToStream<PlayerData>(data, path.outputStream())
             data
         }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    fun onPlayerJoin(event: PlayerJoinEvent) {
+        loadData(event.player)
     }
 }

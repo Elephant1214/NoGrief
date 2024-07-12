@@ -98,7 +98,7 @@ object ClaimManagementCommands {
             return
         }
 
-        PlayerManager.getPlayer(claim.getPlayerOwner()).remainingClaimChunks += claim.chunkCount()
+        PlayerManager.getPlayer(claim.getOwnerPlayer()).remainingClaimChunks += claim.chunkCount()
         claim.owner = target.uniqueId
         PlayerManager.getPlayer(Bukkit.getOfflinePlayer(target.uniqueId)).remainingClaimChunks -= claim.chunkCount()
         sender.sendMessage(

@@ -26,7 +26,7 @@ object ClaimManager {
 
     fun deleteClaim(claim: Claim) {
         this._claims.remove(claim)
-        PlayerManager.getPlayer(claim.getPlayerOwner()).remainingClaimChunks += claim.chunkCount()
+        PlayerManager.getPlayer(claim.getOwnerPlayer()).remainingClaimChunks += claim.chunkCount()
         this.claimsDir.resolve("${claim.claimId}.json").deleteIfExists()
     }
     

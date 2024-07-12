@@ -26,6 +26,10 @@ object ClaimCommands {
         sender: Player,
     ) {
         if (!sender.hasClaimChunks()) return
+        if (ClaimManager.getClaim(sender.chunk) != null) {
+            sender.alreadyClaimed()
+            return
+        }
 
         val chunk = findClaim(sender)
         if (chunk == null) {
@@ -36,7 +40,7 @@ object ClaimCommands {
                     )
                 )
 
-                ClaimChunkAddResult.FAILED_CHUNK_ALREADY_CLAIMED -> sender.sendMessage(LocaleManager.get("chunk.alreadyClaimed"))
+                ClaimChunkAddResult.FAILED_CHUNK_ALREADY_CLAIMED -> sender.alreadyClaimed()
                 ClaimChunkAddResult.FAILED_WRONG_WORLD -> error("Impossible state")
             }
         } else {
@@ -52,6 +56,10 @@ object ClaimCommands {
                 )
             )
         }
+    }
+
+    private fun Player.alreadyClaimed() {
+        this@alreadyClaimed.sendMessage(LocaleManager.get("chunk.alreadyClaimed"))
     }
 
     @CommandMethod("delclaim")
